@@ -104,13 +104,14 @@ def getcortarNoApt(str):
         strLen = len(tmp)
         sale = tmp[0:strLen-1].split('/')
 
-        aptName['name'] = list[i].text.split()[0]
+        aptName['name'] = ' '.join(list[i].text.split()[0:-1])
         aptName['code'] = list[i].find('a')['hscp_no']
         aptName['mapx'] = list[i].find('a')['mapx']
         aptName['mapy'] = list[i].find('a')['mapy']
         aptName['sale_trade'] = int(sale[0])
         aptName['sale_lease'] = int(sale[1])
         aptName['sale_rent'] = int(sale[2])
+        #print aptName['name'], aptName['sale_trade'], aptName['sale_lease'], aptName['sale_rent']
         ### Check!!!
         aptName_list.append(aptName)
 
@@ -130,7 +131,6 @@ def getAptList(str, apt_list):
     #for i in range(1):
         targetIdx = (i+1) * 2 - 1
         subStr = list[targetIdx].findAll('div', {"class" : "inner"})
-        print i
         apt = {}
         if len(subStr) == 8:
             apt['class'] = subStr[0].text
@@ -175,14 +175,14 @@ def getAptList(str, apt_list):
 
 
 # city(Seoul) parsing --> Ku list
-'''
+
 url = 'http://land.naver.com/article/cityInfo.nhn?rletTypeCd=A01&tradeTypeCd=&hscpTypeCd=A01%3AA03%3AA04&cortarNo=1100000000'
 r = requests.get(url)
 cortarNoKu_list = get_cortarNoKu(r.text)
-'''
+
 
 # Ku List json file generation.
-'''
+
 kuList = []
 for i in range(len(kuName)):
     kuListElements = {}
@@ -198,12 +198,12 @@ for i in range(len(kuName)):
 #    print aa['nameKR'],aa['nameEN'], aa['code'], aa['index'], aa['fname']
 
 writeJSON('seoul_ku_list.json', kuList)
-'''
+
 
 # kuList --> Dong List
-'''
-kuList = loadJSON('seoul_ku_list.json')
 
+kuList = loadJSON('seoul_ku_list.json')
+'''
 idx = 0
 for kuElements in kuList:
     url1 = 'http://land.naver.com/article/divisionInfo.nhn?cortarNo='
@@ -241,16 +241,35 @@ dongList = loadJSON(kuList[0]['fname'])
 #r = requests.get(url)
 #aptList = getcortarNoApt(r.text)
 
-for kuSub in kuList:
+for kuSub in kuList[0:1]:
     dongList = loadJSON(kuSub['fname'])
-    for dongSub in dongList:
+    for dongSub in dongList[0:1]:
         url1 = 'http://land.naver.com/article/articleList.nhn?rletTypeCd=A01&tradeTypeCd=&hscpTypeCd=A01%3AA03%3AA04&cortarNo='
         code = dongSub['code']
         url = url1 + code
-        print url
         r = requests.get(url)
         aptList = getcortarNoApt(r.text)
-        print kuSub['nameKR'], dongSub['nameKR'],len(aptList)
+
+        for aptSub in aptList[0:1]:
+            nTotalSale = aptSub['sale_trade'] + aptSub['sale_lease'] + aptSub['sale_rent']
+            nPage = (nTotalSale / 30) + 1
+            print kuSub['nameKR'], dongSub['nameKR'],aptSub['name'], nTotalSale, aptSub['sale_trade'],aptSub['sale_rent'],aptSub['sale_lease'],nPage
+            url1 = 'http://land.naver.com/article/articleList.nhn?rletTypeCd=A01&tradeTypeCd=&rletNo='
+            url2 = '&cortarNo='
+            url3 = '&hscpTypeCd=A01%3AA03%3AA04&mapX=&mapY=&mapLevel=&page='
+            url4 = '&articlePage=&ptpNo=&rltrId=&mnex=&bildNo=&articleOrderCode=&cpId=&period=&prodTab=&atclNo=&atclRletTypeCd=&location=2520&bbs_tp_cd=&sort=&siteOrderCode=#_content_list_target'
+
+            aptElement = []
+            for i in range(nPage):
+                if not nTotalSale == 0:
+                    url = url1 + aptSub['code'] + url2 + dongSub['code'] + url3 + unicode(i+1) + url4
+                    print url
+                    r = requests.get(url)
+                    getAptList(r.text, aptElement)
+
+            for aa in aptElement:
+                print aa['price'], aa['class'], aa['date'], aa['complex'], aa['area_display'], aa['store'], aa['store_tel'], aa['store_code']
+
 
 
 
