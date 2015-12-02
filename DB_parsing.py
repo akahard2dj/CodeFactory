@@ -120,12 +120,17 @@ def getcortarNoApt(str):
 def getAptList(str, apt_list):
 
     soup = bs4.BeautifulSoup(str, "html.parser")
-
     wrap = soup.find('div', {"id" : "wrap"})
     container = wrap.find('div', {"id" : "container"})
     sale_info = container.find('div', {"class" : "sale_info"})
     table = sale_info.find('table', {"class" : "sale_list _tb_site_img NE=a:cpm"})
-    list = table.findAll('tr')
+
+    try:
+        list = table.findAll('tr')
+    except AttributeError:
+        print 'passing'
+        return None
+
     num_list =  (len(list)-1)/2
     for i in range(num_list):
     #for i in range(1):
@@ -240,8 +245,9 @@ dongList = loadJSON(kuList[0]['fname'])
 #print url
 #r = requests.get(url)
 #aptList = getcortarNoApt(r.text)
+requests.adapters.DEFAULT_RETRIES = 2
 
-for kuSub in kuList[0:1]:
+for kuSub in kuList[0:10]:
     dongList = loadJSON(kuSub['fname'])
     for dongSub in dongList[0:1]:
         url1 = 'http://land.naver.com/article/articleList.nhn?rletTypeCd=A01&tradeTypeCd=&hscpTypeCd=A01%3AA03%3AA04&cortarNo='
@@ -250,7 +256,7 @@ for kuSub in kuList[0:1]:
         r = requests.get(url)
         aptList = getcortarNoApt(r.text)
 
-        for aptSub in aptList[0:1]:
+        for aptSub in aptList:
             nTotalSale = aptSub['sale_trade'] + aptSub['sale_lease'] + aptSub['sale_rent']
             nPage = (nTotalSale / 30) + 1
             print kuSub['nameKR'], dongSub['nameKR'],aptSub['name'], nTotalSale, aptSub['sale_trade'],aptSub['sale_rent'],aptSub['sale_lease'],nPage
@@ -264,7 +270,12 @@ for kuSub in kuList[0:1]:
                 if not nTotalSale == 0:
                     url = url1 + aptSub['code'] + url2 + dongSub['code'] + url3 + unicode(i+1) + url4
                     print url
-                    r = requests.get(url)
+                    print 'requesting...',
+                    try:
+                        r = requests.get(url, timeout=10.0)
+                    except requests.exceptions.ConnectionError as e:
+                        print 'Error'
+                    print 'Done!'
                     getAptList(r.text, aptElement)
 
             for aa in aptElement:
