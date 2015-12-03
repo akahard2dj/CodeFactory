@@ -1,6 +1,7 @@
 import bs4
 import requests
 import json
+import DW_parsing
 
 kuName = ['kangnam', 'kangdong', 'kangbuk', 'kangseo','kwanak','kwangjin','kuro','kuemchoen','noone','dobong',
             'dongdaemun','dongjak','mapo','seodaemun','seocho','seongdong','seongbuk','songpa','yangcheon',
@@ -46,6 +47,8 @@ def loadJSON(fname):
     return list
 
 def get_cortarNoKu(str):
+    # target parsing context
+
     cortarNo_list = []
     soup = bs4.BeautifulSoup(str, "html.parser")
     table = soup.find('div', {"class" : "area scroll"})
@@ -180,12 +183,30 @@ def getAptList(str, apt_list):
 
 
 # city(Seoul) parsing --> Ku list
+# si/do parsing --> si/ku/kun list
 
-url = 'http://land.naver.com/article/cityInfo.nhn?rletTypeCd=A01&tradeTypeCd=&hscpTypeCd=A01%3AA03%3AA04&cortarNo=1100000000'
-r = requests.get(url)
-cortarNoKu_list = get_cortarNoKu(r.text)
+class1_code = ['1100000000','4100000000','2800000000','2600000000','3000000000','2700000000','3100000000','3600000000','2900000000','4200000000','4300000000','4400000000','4700000000','4800000000','4500000000','4600000000','5000000000']
+class1_nameEN = ['seoul-si','gyeonggi-do','incheon-si','busan-si','daejeon-si','daegu-si','ulsan-si','saejong-si','gwangju-si','gangwon-do','chungcheongbuk-do','chungcheongnam-do','gyeongsangbuk-do','gyunsangnam-do','jeonrabuk-do','jeongranam-do','jaeju-do']
 
 
+
+#url = 'http://land.naver.com/article/cityInfo.nhn?rletTypeCd=A01&tradeTypeCd=&hscpTypeCd=A01%3AA03%3AA04&cortarNo=1100000000'
+#       http://land.naver.com/article/cityInfo.nhn?rletTypeCd=A01&tradeTypeCd=&hscpTypeCd=&cortarNo=1100000000
+#       http://land.naver.com/article/cityInfo.nhn?rletNo=&rletTypeCd=A01&tradeTypeCd=&hscpTypeCd=&cpId=&location=&siteOrderCode=&cortarNo=2800000000
+#r = requests.get(url)
+#cortarNoKu_list = get_cortarNoKu(r.text)
+
+#url1 = 'http://land.naver.com/article/cityInfo.nhn?rletTypeCd=A01&tradeTypeCd=&hscpTypeCd=A01%3AA03%3AA04&cortarNo='
+url1 = 'http://land.naver.com/article/cityInfo.nhn?rletNo=&rletTypeCd=A01&tradeTypeCd=&hscpTypeCd=&cpId=&location=&siteOrderCode=&cortarNo='
+for i in range(len(class1_code)):
+    url = url1 + class1_code[i]
+    r = requests.get(url)
+    cortarNoC2 = DW_parsing.getCortarNoC2(r.text)
+    print class1_nameEN[i]
+    #for c2List in cortarNoC2[0:1]:
+    #    print class1_nameEN[i],c2List['name'], c2List['code']
+
+'''
 # Ku List json file generation.
 
 kuList = []
@@ -208,6 +229,9 @@ writeJSON('seoul_ku_list.json', kuList)
 # kuList --> Dong List
 
 kuList = loadJSON('seoul_ku_list.json')
+'''
+
+
 '''
 idx = 0
 for kuElements in kuList:
@@ -235,7 +259,7 @@ for kuElements in kuList:
     idx = idx + 1
 '''
 
-
+'''
 # dong list -> apt list
 kuList = loadJSON('seoul_ku_list.json')
 dongList = loadJSON(kuList[0]['fname'])
@@ -281,7 +305,7 @@ for kuSub in kuList[0:10]:
             for aa in aptElement:
                 print aa['price'], aa['class'], aa['date'], aa['complex'], aa['area_display'], aa['store'], aa['store_tel'], aa['store_code']
 
-
+'''
 
 
 
