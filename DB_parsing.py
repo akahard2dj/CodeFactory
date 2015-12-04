@@ -2,6 +2,8 @@ import bs4
 import requests
 import json
 import DW_parsing
+import DW_stat
+import IO
 
 kuName = ['kangnam', 'kangdong', 'kangbuk', 'kangseo','kwanak','kwangjin','kuro','kuemchoen','noone','dobong',
             'dongdaemun','dongjak','mapo','seodaemun','seocho','seongdong','seongbuk','songpa','yangcheon',
@@ -182,82 +184,36 @@ def getAptList(str, apt_list):
             apt_list.append(apt)
 
 
-# city(Seoul) parsing --> Ku list
-# si/do parsing --> si/ku/kun list
-
 class1_code = ['1100000000','4100000000','2800000000','2600000000','3000000000','2700000000','3100000000','3600000000','2900000000','4200000000','4300000000','4400000000','4700000000','4800000000','4500000000','4600000000','5000000000']
 class1_nameEN = ['seoul-si','gyeonggi-do','incheon-si','busan-si','daejeon-si','daegu-si','ulsan-si','saejong-si','gwangju-si','gangwon-do','chungcheongbuk-do','chungcheongnam-do','gyeongsangbuk-do','gyunsangnam-do','jeonrabuk-do','jeongranam-do','jaeju-do']
+type_code = ['A01', 'A02', 'B01', 'C03', 'E03', 'C01', 'D02', 'D01', 'E02', 'F01', 'D03']
+type_name = ['apt','oft','bun','hos','lnd','onr','shp','ofc','fct','rdv','etc']
+
+#c2List = DW_parsing.getc2List(class1_code)
+#IO.writeJSON('c2List.json',c2List)
+c2List = IO.loadJSON('c2List.json')
+#for sub in c2List:
+#    print sub['c1Code'], sub['c1NameKR'], sub['c2Code'], sub['c2NameKR']
+
+#output_dict = [x for x in c2List if x['c1Code'] == '1100000000']
+
+#for tCode in type_code:
+#    c3List = DW_parsing.getc3List(c2List, tCode)
+#    fname = 'c3List_' + tCode + '.json'
+#    writeJSON(fname, c3List)
 
 
+#for tCode in type_code:
+#    fname = 'c3List_' + tCode + '.json'
+#    c3List = IO.loadJSON(fname)
 
-#url = 'http://land.naver.com/article/cityInfo.nhn?rletTypeCd=A01&tradeTypeCd=&hscpTypeCd=A01%3AA03%3AA04&cortarNo=1100000000'
-#       http://land.naver.com/article/cityInfo.nhn?rletTypeCd=A01&tradeTypeCd=&hscpTypeCd=&cortarNo=1100000000
-#       http://land.naver.com/article/cityInfo.nhn?rletNo=&rletTypeCd=A01&tradeTypeCd=&hscpTypeCd=&cpId=&location=&siteOrderCode=&cortarNo=2800000000
-#r = requests.get(url)
-#cortarNoKu_list = get_cortarNoKu(r.text)
+c3List = IO.loadJSON('c3List_A01.json')
+#output_dict = [x for x in c3List if x['c1Code'] == '1100000000']
+#for sub in output_dict:
+#    print sub['c1Code'], sub['c1NameKR'], sub['c2Code'], sub['c2NameKR'], sub['c3Code'], sub['c3NameKR'], sub['count']
 
-#url1 = 'http://land.naver.com/article/cityInfo.nhn?rletTypeCd=A01&tradeTypeCd=&hscpTypeCd=A01%3AA03%3AA04&cortarNo='
-url1 = 'http://land.naver.com/article/cityInfo.nhn?rletNo=&rletTypeCd=A01&tradeTypeCd=&hscpTypeCd=&cpId=&location=&siteOrderCode=&cortarNo='
-for i in range(len(class1_code)):
-    url = url1 + class1_code[i]
-    r = requests.get(url)
-    cortarNoC2 = DW_parsing.getCortarNoC2(r.text)
-    print class1_nameEN[i]
-    #for c2List in cortarNoC2[0:1]:
-    #    print class1_nameEN[i],c2List['name'], c2List['code']
+DW_stat.drill(c2List, c3List)
 
-'''
-# Ku List json file generation.
-
-kuList = []
-for i in range(len(kuName)):
-    kuListElements = {}
-    kuListElements['nameKR'] = cortarNoKu_list[i]['name']
-    kuListElements['nameEN'] = kuName[i]
-    kuListElements['index'] = i
-    kuListElements['fname'] = kuName[i] + '.json'
-    kuListElements['code'] = cortarNoKu_list[i]['code']
-
-    kuList.append(kuListElements)
-
-#for aa in kuList:
-#    print aa['nameKR'],aa['nameEN'], aa['code'], aa['index'], aa['fname']
-
-writeJSON('seoul_ku_list.json', kuList)
-
-
-# kuList --> Dong List
-
-kuList = loadJSON('seoul_ku_list.json')
-'''
-
-
-'''
-idx = 0
-for kuElements in kuList:
-    url1 = 'http://land.naver.com/article/divisionInfo.nhn?cortarNo='
-    url2 = '&rletNo=&rletTypeCd=A01&tradeTypeCd=&hscpTypeCd=A01%3AA03%3AA04&cpId=&location=&siteOrderCode='
-    kuCode = kuElements['code']
-    url = url1 + kuCode + url2
-    print url
-    r = requests.get(url)
-    dongList = get_cortarNoDong(r.text)
-
-    newDongList = []
-    for i in range(len(dongList)):
-        newDong = {}
-        newDong['nameKR'] = dongList[i]['nameKR']
-        newDong['nameEN'] = dongName[idx][i]
-        newDong['code'] = dongList[i]['code']
-        newDong['count'] = dongList[i]['count']
-        newDongList.append(newDong)
-
-        print kuElements['nameKR'], newDong['nameKR'], newDong['nameEN'], newDong['code'], newDong["count"]
-
-    fout = kuElements['fname']
-    writeJSON(fout, newDongList)
-    idx = idx + 1
-'''
 
 '''
 # dong list -> apt list
