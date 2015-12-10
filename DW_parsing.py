@@ -1,6 +1,7 @@
 import bs4
 import requests
 import time
+import copy
 
 def getTick():
     return time.clock()
@@ -44,6 +45,8 @@ def getCortarNoC2(str):
         cortarNo_list.append(cortarNo)
 
     return cortarNo_list
+
+
 
 def getc2List(c1_code):
     url1 = 'http://land.naver.com/article/cityInfo.nhn?rletNo=&rletTypeCd=A01&tradeTypeCd=&hscpTypeCd=&cpId=&location=&siteOrderCode=&cortarNo='
@@ -134,3 +137,180 @@ def getc3List(c2List, typeCode):
             print 're-requesting...'
 
     return c3List
+
+def getcortarNoC4(str):
+    soup = bs4.BeautifulSoup(str, "html.parser")
+    #wrap = soup.find('div', {"id" : "wrap"})
+    #map = wrap.find('div', {"id" : "map"})
+    #map_viewer = map.find('div', {"class" : "map_viewer"})
+    #address_list = map_viewer.find('div', {"class" : "address_list  NE=a:lcl"})
+    #map_tab = address_list.find('div', {"class" : "map_tab"})
+    #first_tab = map_tab.find('ul', {"class" : "lst_tab"})
+    #apt_on = first_tab.find('li', {"class" : "on"})
+    scroll_list = soup.find('div', {"class" : "housing scroll"})
+    list = scroll_list.findAll('li')
+
+    cortarNo_list = []
+    for i in range(len(list)):
+        ### Check!!!
+        cortarNo = {}
+        tmp = list[i].text.split()[-1].replace("(","").replace(")","")
+        strLen = len(tmp)
+        sale = tmp[0:strLen-1].split('/')
+
+        cortarNo['name'] = ' '.join(list[i].text.split()[0:-1])
+        cortarNo['code'] = list[i].find('a')['hscp_no']
+        cortarNo['mapx'] = list[i].find('a')['mapx']
+        cortarNo['mapy'] = list[i].find('a')['mapy']
+        cortarNo['sale_trade'] = int(sale[0])
+        cortarNo['sale_lease'] = int(sale[1])
+        cortarNo['sale_rent'] = int(sale[2])
+        cortarNo['sale_total'] = int(sale[0]) + int(sale[1]) + int(sale[2])
+        #print aptName['name'], aptName['sale_trade'], aptName['sale_lease'], aptName['sale_rent']
+        ### Check!!!
+        cortarNo_list.append(cortarNo)
+
+    return cortarNo_list
+
+def getc4SubList(str, c4SubList):
+
+    soup = bs4.BeautifulSoup(str, "html.parser")
+    wrap = soup.find('div', {"id" : "wrap"})
+    container = wrap.find('div', {"id" : "container"})
+    sale_info = container.find('div', {"class" : "sale_info"})
+    table = sale_info.find('table', {"class" : "sale_list _tb_site_img NE=a:cpm"})
+
+    try:
+        list = table.findAll('tr')
+    except AttributeError:
+        print 'passing'
+        return None
+
+    num_list =  (len(list)-1)/2
+    for i in range(num_list):
+    #for i in range(1):
+        targetIdx = (i+1) * 2 - 1
+        subStr = list[targetIdx].findAll('div', {"class" : "inner"})
+        subList = {}
+        print (subStr[1].find('span')['class'])
+        if len(subStr) == 8:
+            subList['class'] = subStr[0].text
+            subList['date'] = subStr[1].text.strip()
+            subList['tradeFlag'] = subStr[1].find('span')['class']
+            subList['complex'] = subStr[2].text.strip()
+            subList['area_display'] = subStr[3].text.split()[0]
+            subList['area_supply'] = subStr[3].text.split()[2]
+            subList['net_area'] = subStr[3].text.split()[4]
+            subList['block'] = subStr[4].text.strip()
+            subList['floor'] = subStr[5].text.strip()
+            subList['price'] = subStr[6].text.split()[0]
+            subList['store'] = subStr[7].find('span')['title']
+            subList['store_tel'] = subStr[7].find('span', {"class" : "tel"} ).text
+            try:
+                tmp = subStr[7].find('a').get('href')
+                code = tmp.split('(',1)[1].split(')')[0].split("'",1)[1].split("'")[0]
+            except AttributeError:
+                code = 'NoCode'
+            #vals = tmp.split('(',1)[1].split(')')[0]
+
+            subList['store_code'] = code
+            #print subList['class'],subList['date'],subList['complex'],subList['floor'],subList['tradeFlag']
+            #c4SubList.append(subList)
+        elif len(subStr) == 9:
+            subList['class'] = subStr[0].text
+            subList['date'] = subStr[1].text.strip()
+            subList['tradeFlag'] = subStr[1].find('span')['class']
+            subList['complex'] = subStr[3].find('a')['title']
+            subList['area_display'] = subStr[4].text.split()[0]
+            subList['area_supply'] = subStr[4].text.split()[2]
+            subList['net_area'] = subStr[4].text.split()[4]
+            subList['block'] = subStr[5].text.strip()
+            subList['floor'] = subStr[6].text.strip()
+            subList['price'] = subStr[7].text.split()[0]
+            subList['store'] = subStr[8].find('span')['title']
+            subList['store_tel'] = subStr[8].find('span', {"class" : "tel"} ).text
+            try:
+                tmp = subStr[8].find('a').get('href')
+                code = tmp.split('(',1)[1].split(')')[0].split("'",1)[1].split("'")[0]
+            except AttributeError:
+                code = 'NoCode'
+            subList['store_code'] = code
+        print subList['class'],subList['date'],subList['complex'],subList['floor'],subList['tradeFlag']
+        c4SubList.append(copy.deepcopy(subList))
+
+def getc4List(c3List, typeCode):
+    c4List = []
+    url1 = 'http://land.naver.com/article/articleList.nhn?rletTypeCd='
+    url2 = '&tradeTypeCd=&hscpTypeCd='
+    url3 = '%3AA03%3AA04&cortarNo='
+    requests.adapters.DEFAULT_RETRIES = 2
+
+    for subC3 in c3List[0:1]:
+        code = subC3['c3Code']
+        url = url1 + typeCode + url2 + typeCode + url3 + code
+
+        try:
+            r = requests.get(url)
+            cortarNoC4 = getcortarNoC4(r.text)
+
+            for subC4 in cortarNoC4[0:1]:
+                c4ListSub = {}
+                c4ListSubElement = []
+
+                # 30 : 1 page has 30 lists
+                nPage = subC4['sale_total'] / 30 + 1
+                url1 = 'http://land.naver.com/article/articleList.nhn?rletTypeCd='
+                url2 = '&tradeTypeCd=&rletNo='
+                url3 = '&cortarNo='
+                url4 = '&hscpTypeCd='
+                url5 = '%3AA03%3AA04&mapX=&mapY=&mapLevel=&page='
+                url6 = '&articlePage=&ptpNo=&rltrId=&mnex=&bildNo=&articleOrderCode=&cpId=&period=&prodTab=&atclNo=&atclRletTypeCd=&location=2520&bbs_tp_cd=&sort=&siteOrderCode=#_content_list_target'
+
+                for i in range(nPage):
+                    url = url1 + typeCode + url2 + subC4['code'] + url3 + subC3['c3Code'] + url4 + typeCode + url5 + unicode(i+1) + url6
+                    print url
+                    try:
+                        r = requests.get(url, timeout=5.0)
+                        getc4SubList(r.text, c4ListSubElement)
+
+                    except requests.exceptions.ConnectionError as e:
+                        print 're-requesting...'
+
+                for subElement in c4ListSubElement:
+                    c4ListSub['c1Code'] = subC3['c1Code']
+                    c4ListSub['c1NameKR'] = subC3['c1NameKR']
+                    c4ListSub['c2Code'] = subC3['c2Code']
+                    c4ListSub['c2NameKR'] = subC3['c2NameKR']
+                    c4ListSub['c3Code'] = subC3['c3Code']
+                    c4ListSub['c3NameKR'] = subC3['c3NameKR']
+                    c4ListSub['count'] = subC3['count']
+
+                    c4ListSub['c4NameKR'] = subC4['name']
+                    c4ListSub['c4Code'] = subC4['code']
+                    c4ListSub['c4Mapx'] = subC4['mapx']
+                    c4ListSub['c4Mapy'] = subC4['mapy']
+                    c4ListSub['c4SaleTrade'] = subC4['sale_trade']
+                    c4ListSub['c4SaleLease'] = subC4['sale_lease']
+                    c4ListSub['c4SaleRent'] = subC4['sale_rent']
+                    c4ListSub['c4SaleTotal'] = subC4['sale_total']
+
+                    c4ListSub['c4AptTradeType'] = subElement['class']
+                    c4ListSub['c4AptRegisterDate'] = subElement['date']
+                    c4ListSub['c4AptTradeFlag'] = subElement['tradeFlag']
+                    c4ListSub['c4AptComplexNameKR'] = subElement['complex']
+                    c4ListSub['c4AptAreaDisplay'] = subElement['area_display']
+                    c4ListSub['c4AptAreaSupply'] = subElement['area_supply']
+                    c4ListSub['c4AptNetArea'] = subElement['net_area']
+                    c4ListSub['c4AptBlock'] = subElement['block']
+                    c4ListSub['c4AptFloor'] = subElement['floor']
+                    c4ListSub['c4AptPrice'] = subElement['price']
+                    c4ListSub['c4AptBrokerStoreNameKR'] = subElement['store']
+                    c4ListSub['c4AptBrokerStoreTel'] = subElement['store_tel']
+                    c4ListSub['c4AptBrokerStoreCode'] = subElement['store_code']
+
+                    c4List.append(copy.deepcopy(c4ListSub))
+
+        except requests.exceptions.ConnectionError as e:
+            print 're-requesting...'
+
+    return c4List
