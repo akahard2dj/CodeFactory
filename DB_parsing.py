@@ -116,7 +116,7 @@ def getcortarNoApt(str):
         aptName['sale_trade'] = int(sale[0])
         aptName['sale_lease'] = int(sale[1])
         aptName['sale_rent'] = int(sale[2])
-        #print aptName['name'], aptName['sale_trade'], aptName['sale_lease'], aptName['sale_rent']
+        print aptName['name'], aptName['sale_trade'], aptName['sale_lease'], aptName['sale_rent']
         ### Check!!!
         aptName_list.append(aptName)
 
@@ -212,8 +212,60 @@ c3List = IO.loadJSON('c3List_A01.json')
 #for sub in output_dict:
 #    print sub['c1Code'], sub['c1NameKR'], sub['c2Code'], sub['c2NameKR'], sub['c3Code'], sub['c3NameKR'], sub['count']
 
-DW_stat.drill(c2List, c3List)
+#DW_stat.drill(c2List, c3List)
 
+c4List = DW_parsing.getc4List(c3List, 'A01')
+IO.writeJSON('c4List_A01.json', c4List)
+
+#c4List = IO.loadJSON('2015-12-09-c4List_A01.json')
+for sub in c4List:
+    print sub['c1Code'], sub['c1NameKR'], sub['c2Code'], sub['c2NameKR'], sub['c3Code'], sub['c3NameKR'],sub['c4Code'], sub['c4NameKR'], sub['c4AptTradeType'], sub['c4AptRegisterDate'], sub['c4AptTradeFlag'], sub['c4AptPrice']
+
+'''
+c4ListSub['c1Code'] = subC3['c1Code']
+                            c4ListSub['c1NameKR'] = subC3['c1NameKR']
+                            c4ListSub['c2Code'] = subC3['c2Code']
+                            c4ListSub['c2NameKR'] = subC3['c2NameKR']
+                            c4ListSub['c3Code'] = subC3['c3Code']
+                            c4ListSub['c3NameKR'] = subC3['c3NameKR']
+                            c4ListSub['count'] = subC3['count']
+
+                            c4ListSub['c4NameKR'] = subC4['name']
+                            c4ListSub['c4Code'] = subC4['code']
+                            c4ListSub['c4Mapx'] = subC4['mapx']
+                            c4ListSub['c4Mapy'] = subC4['mapy']
+                            c4ListSub['c4SaleTrade'] = subC4['sale_trade']
+                            c4ListSub['c4SaleLease'] = subC4['sale_lease']
+                            c4ListSub['c4SaleRent'] = subC4['sale_rent']
+                            c4ListSub['c4SaleTotal'] = subC4['sale_total']
+
+                            c4ListSub['c4AptTradeType'] = subElement['class']
+                            c4ListSub['c4AptRegisterDate'] = subElement['date']
+                            c4ListSub['c4AptTradeFlag'] = subElement['tradeFlag']
+                            c4ListSub['c4AptComplexNameKR'] = subElement['complex']
+                            c4ListSub['c4AptAreaDisplay'] = subElement['area_display']
+                            c4ListSub['c4AptAreaSupply'] = subElement['area_supply']
+                            c4ListSub['c4AptNetArea'] = subElement['net_area']
+                            c4ListSub['c4AptBlock'] = subElement['block']
+                            c4ListSub['c4AptFloor'] = subElement['floor']
+                            c4ListSub['c4AptPrice'] = subElement['price']
+                            c4ListSub['c4AptBrokerStoreNameKR'] = subElement['store']
+                            c4ListSub['c4AptBrokerStoreTel'] = subElement['store_tel']
+                            c4ListSub['c4AptBrokerStoreCode'] = subElement['store_code']
+'''
+
+'''
+for subC3 in c3List[0:1]:
+    url1 = 'http://land.naver.com/article/articleList.nhn?rletTypeCd=A01&tradeTypeCd=&hscpTypeCd=A01%3AA03%3AA04&cortarNo='
+    code = subC3['c3Code']
+    url = url1 + code
+
+    r = requests.get(url)
+    subC4List = getcortarNoApt(r.text)
+    #nTotalSale = subC4List['sale_trade'] + subC4List['sale_lease'] + subC4List['sale_rent']
+    for subC4 in subC4List:
+        print subC3['c3NameKR'],subC4['name']
+'''
 
 '''
 # dong list -> apt list
