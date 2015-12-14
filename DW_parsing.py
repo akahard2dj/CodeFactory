@@ -6,28 +6,28 @@ import copy
 def getTick():
     return time.clock()
 
-def getCortarNoC2(str):
+def getCortarNoC2(text):
     # target parsing context
     cortarNo_list = []
-    soup = bs4.BeautifulSoup(str, "html.parser")
+    soup = bs4.BeautifulSoup(text, "html.parser")
 
     #checking class2?
     address_list = soup.find('div', {"class" : "address_list  NE=a:lcl"})
     flagNumberStr = address_list.find('h3', {"class" : "area_tit"})
     span = flagNumberStr.find('span')
-    if span == None:
+    if span is None:
         c1NameTable = soup.find('select', {"class" : "selectbox-source forload"})
         c1Name = c1NameTable.find('option', selected=True)
 
         table = soup.find('div', {"class" : "area scroll"})
-        list = table.findAll('li')
+        listItem = table.findAll('li')
 
-        for i in range(len(list)):
+        for i in range(len(listItem)):
             cortarNo = {}
-            tmp = list[i].find('a')["onclick"]
+            tmp = listItem[i].find('a')["onclick"]
             code = tmp.split('(',1)[1].split(')')[0].split("'",1)[1].split("'")[0]
             cortarNo["c1NameKR"] = c1Name.text
-            cortarNo["nameKR"] = list[i].text
+            cortarNo["nameKR"] = listItem[i].text
             cortarNo["code"] = code
             cortarNo_list.append(cortarNo)
 
@@ -90,19 +90,19 @@ def getCortarNoC3(str):
 
     soup = bs4.BeautifulSoup(str, "html.parser")
     wrap = soup.find('div', {"id" : "wrap"})
-    map = wrap.find('div', {"id" : "map"})
-    map_viewer = map.find('div', {"class" : "map_viewer"})
+    map_text = wrap.find('div', {"id" : "map"})
+    map_viewer = map_text.find('div', {"class" : "map_viewer"})
     regionList = map_viewer.find('div', {"class" : "address_list  NE=a:lcl"})
     areaScroll = regionList.find('div', {"class" : "area scroll"})
-    list = areaScroll.findAll('li')
+    listItem = areaScroll.findAll('li')
 
-    for i in range(len(list)):
+    for i in range(len(listItem)):
         cortarNo = {}
-        tmp = list[i].find('a')["onclick"]
+        tmp = listItem[i].find('a')["onclick"]
         code = tmp.split('{',1)[1].split('}')[0].split(":")[1]
 
-        cortarNo["c3NameKR"] = list[i].text.split("(")[0]
-        cortarNo["count"] = list[i].text.split("(")[1].replace(")","")
+        cortarNo["c3NameKR"] = listItem[i].text.split("(")[0]
+        cortarNo["count"] = listItem[i].text.split("(")[1].replace(")","")
         cortarNo["code"] = code
         cortarNo_list.append(cortarNo)
 
@@ -138,8 +138,8 @@ def getc3List(c2List, typeCode):
 
     return c3List
 
-def getcortarNoC4(str):
-    soup = bs4.BeautifulSoup(str, "html.parser")
+def getcortarNoC4(text):
+    soup = bs4.BeautifulSoup(text, "html.parser")
     #wrap = soup.find('div', {"id" : "wrap"})
     #map = wrap.find('div', {"id" : "map"})
     #map_viewer = map.find('div', {"class" : "map_viewer"})
@@ -148,20 +148,20 @@ def getcortarNoC4(str):
     #first_tab = map_tab.find('ul', {"class" : "lst_tab"})
     #apt_on = first_tab.find('li', {"class" : "on"})
     scroll_list = soup.find('div', {"class" : "housing scroll"})
-    list = scroll_list.findAll('li')
+    listItem = scroll_list.findAll('li')
 
     cortarNo_list = []
-    for i in range(len(list)):
+    for i in range(len(listItem)):
         ### Check!!!
         cortarNo = {}
-        tmp = list[i].text.split()[-1].replace("(","").replace(")","")
+        tmp = listItem[i].text.split()[-1].replace("(","").replace(")","")
         strLen = len(tmp)
         sale = tmp[0:strLen-1].split('/')
 
-        cortarNo['name'] = ' '.join(list[i].text.split()[0:-1])
-        cortarNo['code'] = list[i].find('a')['hscp_no']
-        cortarNo['mapx'] = list[i].find('a')['mapx']
-        cortarNo['mapy'] = list[i].find('a')['mapy']
+        cortarNo['name'] = ' '.join(listItem[i].text.split()[0:-1])
+        cortarNo['code'] = listItem[i].find('a')['hscp_no']
+        cortarNo['mapx'] = listItem[i].find('a')['mapx']
+        cortarNo['mapy'] = listItem[i].find('a')['mapy']
         cortarNo['sale_trade'] = int(sale[0])
         cortarNo['sale_lease'] = int(sale[1])
         cortarNo['sale_rent'] = int(sale[2])
@@ -172,25 +172,25 @@ def getcortarNoC4(str):
 
     return cortarNo_list
 
-def getc4SubList(str, c4SubList):
+def getc4SubList(text, c4SubList):
 
-    soup = bs4.BeautifulSoup(str, "html.parser")
+    soup = bs4.BeautifulSoup(text, "html.parser")
     wrap = soup.find('div', {"id" : "wrap"})
     container = wrap.find('div', {"id" : "container"})
     sale_info = container.find('div', {"class" : "sale_info"})
     table = sale_info.find('table', {"class" : "sale_list _tb_site_img NE=a:cpm"})
 
     try:
-        list = table.findAll('tr')
+        listItem = table.findAll('tr')
     except AttributeError:
         print 'passing'
         return None
 
-    num_list =  (len(list)-1)/2
+    num_list =  (len(listItem)-1)/2
     for i in range(num_list):
     #for i in range(1):
         targetIdx = (i+1) * 2 - 1
-        subStr = list[targetIdx].findAll('div', {"class" : "inner"})
+        subStr = listItem[targetIdx].findAll('div', {"class" : "inner"})
         subList = {}
         print (subStr[1].find('span')['class'])
         if len(subStr) == 8:
