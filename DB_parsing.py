@@ -45,8 +45,8 @@ type_name = ['apt','oft','bun','hos','lnd','onr','shp','ofc','fct','rdv','etc']
 
 #Loading from json file
 c2List = IO.loadJSON('c2List.json')
-for sub in c2List:
-    print sub['c1Code'], sub['c1NameKR'], sub['c2Code'], sub['c2NameKR']
+#for sub in c2List:
+#    print sub['c1Code'], sub['c1NameKR'], sub['c2Code'], sub['c2NameKR']
 
 # indexing example
 #output_dict = [x for x in c2List if x['c1Code'] == '1100000000']
@@ -60,20 +60,44 @@ for sub in c2List:
 
 #Loading from json file
 #for tCode in type_code:
-tCode = 'A01'
-fname = 'c3List_' + tCode + '.json'
-c3List = IO.loadJSON(fname)
+#tCode = 'A01'
+#fname = 'c3List_' + tCode + '.json'
+#c3List = IO.loadJSON(fname)
 
 c3List = IO.loadJSON('c3List_A01.json')
-output_dict = [x for x in c3List if x['c1Code'] == '1100000000']
-for sub in output_dict:
-    print sub['c1Code'], sub['c1NameKR'], sub['c2Code'], sub['c2NameKR'], sub['c3Code'], sub['c3NameKR'], sub['count']
+#output_dict = [x for x in c3List if x['c1Code'] == '1100000000']
+#for sub in output_dict:
+#    print sub['c1Code'], sub['c1NameKR'], sub['c2Code'], sub['c2NameKR'], sub['c3Code'], sub['c3NameKR'], sub['count']
 
-DW_stat.drill(c2List, c3List)
+#DW_stat.drill(c2List, c3List)
 
 #c4List = DW_parsing.getc4List(c3List, 'A01')
 #IO.writeJSON('c4List_A01.json', c4List)
 
-#c4List = IO.loadJSON('2015-12-09-c4List_A01.json')
+c4List = IO.loadJSON('c4List_A01.json')
+
+
+#c4List = IO.loadJSON('c4List_A01.json')
 #for sub in c4List:
-#    print sub['c1Code'], sub['c1NameKR'], sub['c2Code'], sub['c2NameKR'], sub['c3Code'], sub['c3NameKR'],sub['c4Code'], sub['c4NameKR'], sub['c4AptTradeType'], sub['c4AptRegisterDate'], sub['c4AptTradeFlag'], sub['c4AptPrice']
+#    print sub['c1Code'], sub['c1NameKR'], sub['c2Code'], sub['c2NameKR'], sub['c3Code'], sub['c3NameKR'],sub['c4Code'], sub['c4NameKR']
+
+c5List=DW_parsing.getc5List(c4List, 'A01')
+IO.writeJSON('c5List_A01.json', c5List)
+#c5List = IO.loadJSON('c5List_A01.json')
+#for sub in c5List:
+#    print sub['c1Code'], sub['c1NameKR'], sub['c2Code'], sub['c2NameKR'], sub['c3Code'], sub['c3NameKR'],sub['c4Code'], sub['c4NameKR'], sub['c5AptTradeType'], sub['c5AptRegisterDate'], sub['c5AptTradeFlag'], sub['c5AptPrice']
+
+realList = (c2List, c3List, c4List, c5List)
+#DW_stat.drill2(realList)
+DW_stat.drill(realList)
+
+
+#for sub in c4List:
+#    print sub['c1Code'], sub['c1NameKR'], sub['c2Code'], sub['c2NameKR'], sub['c3Code'], sub['c3NameKR'],sub['c4Code'], sub['c4NameKR']
+
+#output_dict = [x for x in c3List if x['c1Code'] == '1100000000']
+
+#for sub in output_dict:
+#    print sub['c1Code'], sub['c1NameKR'], sub['c2Code'], sub['c2NameKR'], sub['c3Code'], sub['c3NameKR']
+
+#print len(output_dict)
