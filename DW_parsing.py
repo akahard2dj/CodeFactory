@@ -70,7 +70,7 @@ def getc2List(c1_code):
 
     return c2List
 
-def getCortarNoC3(str):
+def getCortarNoC3(text):
     cortarNo_list = []
     '''
     update....
@@ -88,7 +88,7 @@ def getCortarNoC3(str):
     etc : keon-bul (building) : D03
     '''
 
-    soup = bs4.BeautifulSoup(str, "html.parser")
+    soup = bs4.BeautifulSoup(text, "html.parser")
     wrap = soup.find('div', {"id" : "wrap"})
     map_text = wrap.find('div', {"id" : "map"})
     map_viewer = map_text.find('div', {"class" : "map_viewer"})
@@ -172,7 +172,111 @@ def getcortarNoC4(text):
 
     return cortarNo_list
 
-def getc4SubList(text, c4SubList):
+def getc4List(c3List, typeCode):
+    c4List = []
+    url1 = 'http://land.naver.com/article/articleList.nhn?rletTypeCd='
+    url2 = '&tradeTypeCd=&hscpTypeCd='
+    url3 = '%3AA03%3AA04&cortarNo='
+    requests.adapters.DEFAULT_RETRIES = 2
+
+    for subC3 in c3List[0:466]:
+        code = subC3['c3Code']
+        url = url1 + typeCode + url2 + typeCode + url3 + code
+
+        try:
+            r = requests.get(url)
+            cortarNoC4 = getcortarNoC4(r.text)
+
+            for subC4 in cortarNoC4:
+                c4ListSub = {}
+
+                c4ListSub['c1Code'] = subC3['c1Code']
+                c4ListSub['c1NameKR'] = subC3['c1NameKR']
+                c4ListSub['c2Code'] = subC3['c2Code']
+                c4ListSub['c2NameKR'] = subC3['c2NameKR']
+                c4ListSub['c3Code'] = subC3['c3Code']
+                c4ListSub['c3NameKR'] = subC3['c3NameKR']
+                c4ListSub['count'] = subC3['count']
+
+                c4ListSub['c4NameKR'] = subC4['name']
+                c4ListSub['c4Code'] = subC4['code']
+                c4ListSub['c4Mapx'] = subC4['mapx']
+                c4ListSub['c4Mapy'] = subC4['mapy']
+                c4ListSub['c4SaleTrade'] = subC4['sale_trade']
+                c4ListSub['c4SaleLease'] = subC4['sale_lease']
+                c4ListSub['c4SaleRent'] = subC4['sale_rent']
+                c4ListSub['c4SaleTotal'] = subC4['sale_total']
+                c4List.append(c4ListSub)
+
+        except requests.exceptions.ConnectionError as e:
+            print 're-requesting...'
+
+    return c4List
+
+def getc5List(c4List, typeCode):
+    c5List = []
+    requests.adapters.DEFAULT_RETRIES = 2
+
+    for subC4 in c4List:
+        c5ListSub = {}
+        c5ListSubElement = []
+
+        # 30 : 1 page has 30 lists
+        nPage = subC4['c4SaleTotal'] / 30 + 1
+        url1 = 'http://land.naver.com/article/articleList.nhn?rletTypeCd='
+        url2 = '&tradeTypeCd=&rletNo='
+        url3 = '&cortarNo='
+        url4 = '&hscpTypeCd='
+        url5 = '%3AA03%3AA04&mapX=&mapY=&mapLevel=&page='
+        url6 = '&articlePage=&ptpNo=&rltrId=&mnex=&bildNo=&articleOrderCode=&cpId=&period=&prodTab=&atclNo=&atclRletTypeCd=&location=2520&bbs_tp_cd=&sort=&siteOrderCode=#_content_list_target'
+
+        for i in range(nPage):
+            url = url1 + typeCode + url2 + subC4['c4Code'] + url3 + subC4['c3Code'] + url4 + typeCode + url5 + unicode(i+1) + url6
+            print url
+            try:
+                r = requests.get(url, timeout=10.0)
+                getc5SubList(r.text, c5ListSubElement)
+
+            except requests.exceptions.ConnectionError as e:
+                print 're-requesting...'
+
+        for subElement in c5ListSubElement:
+            c5ListSub['c1Code'] = subC4['c1Code']
+            c5ListSub['c1NameKR'] = subC4['c1NameKR']
+            c5ListSub['c2Code'] = subC4['c2Code']
+            c5ListSub['c2NameKR'] = subC4['c2NameKR']
+            c5ListSub['c3Code'] = subC4['c3Code']
+            c5ListSub['c3NameKR'] = subC4['c3NameKR']
+            c5ListSub['count'] = subC4['count']
+
+            c5ListSub['c4NameKR'] = subC4['c4NameKR']
+            c5ListSub['c4Code'] = subC4['c4Code']
+            c5ListSub['c4Mapx'] = subC4['c4Mapx']
+            c5ListSub['c4Mapy'] = subC4['c4Mapy']
+            c5ListSub['c4SaleTrade'] = subC4['c4SaleTrade']
+            c5ListSub['c4SaleLease'] = subC4['c4SaleLease']
+            c5ListSub['c4SaleRent'] = subC4['c4SaleRent']
+            c5ListSub['c4SaleTotal'] = subC4['c4SaleTotal']
+
+            c5ListSub['c5AptTradeType'] = subElement['class']
+            c5ListSub['c5AptRegisterDate'] = subElement['date']
+            c5ListSub['c5AptTradeFlag'] = subElement['tradeFlag']
+            c5ListSub['c5AptComplexNameKR'] = subElement['complex']
+            c5ListSub['c5AptAreaDisplay'] = subElement['area_display']
+            c5ListSub['c5AptAreaSupply'] = subElement['area_supply']
+            c5ListSub['c5AptNetArea'] = subElement['net_area']
+            c5ListSub['c5AptBlock'] = subElement['block']
+            c5ListSub['c5AptFloor'] = subElement['floor']
+            c5ListSub['c5AptPrice'] = subElement['price']
+            c5ListSub['c5AptBrokerStoreNameKR'] = subElement['store']
+            c5ListSub['c5AptBrokerStoreTel'] = subElement['store_tel']
+            c5ListSub['c5AptBrokerStoreCode'] = subElement['store_code']
+
+            c5List.append(copy.deepcopy(c5ListSub))
+
+    return c5List
+
+def getc5SubList(text, c4SubList):
 
     soup = bs4.BeautifulSoup(text, "html.parser")
     wrap = soup.find('div', {"id" : "wrap"})
@@ -192,11 +296,11 @@ def getc4SubList(text, c4SubList):
         targetIdx = (i+1) * 2 - 1
         subStr = listItem[targetIdx].findAll('div', {"class" : "inner"})
         subList = {}
-        print (subStr[1].find('span')['class'])
+
         if len(subStr) == 8:
             subList['class'] = subStr[0].text
             subList['date'] = subStr[1].text.strip()
-            subList['tradeFlag'] = subStr[1].find('span')['class']
+            subList['tradeFlag'] = ''.join(subStr[1].find('span')['class'])
             subList['complex'] = subStr[2].text.strip()
             subList['area_display'] = subStr[3].text.split()[0]
             subList['area_supply'] = subStr[3].text.split()[2]
@@ -219,7 +323,7 @@ def getc4SubList(text, c4SubList):
         elif len(subStr) == 9:
             subList['class'] = subStr[0].text
             subList['date'] = subStr[1].text.strip()
-            subList['tradeFlag'] = subStr[1].find('span')['class']
+            subList['tradeFlag'] = ''.join(subStr[1].find('span')['class'])
             subList['complex'] = subStr[3].find('a')['title']
             subList['area_display'] = subStr[4].text.split()[0]
             subList['area_supply'] = subStr[4].text.split()[2]
@@ -237,80 +341,3 @@ def getc4SubList(text, c4SubList):
             subList['store_code'] = code
         print subList['class'],subList['date'],subList['complex'],subList['floor'],subList['tradeFlag']
         c4SubList.append(copy.deepcopy(subList))
-
-def getc4List(c3List, typeCode):
-    c4List = []
-    url1 = 'http://land.naver.com/article/articleList.nhn?rletTypeCd='
-    url2 = '&tradeTypeCd=&hscpTypeCd='
-    url3 = '%3AA03%3AA04&cortarNo='
-    requests.adapters.DEFAULT_RETRIES = 2
-
-    for subC3 in c3List[0:1]:
-        code = subC3['c3Code']
-        url = url1 + typeCode + url2 + typeCode + url3 + code
-
-        try:
-            r = requests.get(url)
-            cortarNoC4 = getcortarNoC4(r.text)
-
-            for subC4 in cortarNoC4[0:1]:
-                c4ListSub = {}
-                c4ListSubElement = []
-
-                # 30 : 1 page has 30 lists
-                nPage = subC4['sale_total'] / 30 + 1
-                url1 = 'http://land.naver.com/article/articleList.nhn?rletTypeCd='
-                url2 = '&tradeTypeCd=&rletNo='
-                url3 = '&cortarNo='
-                url4 = '&hscpTypeCd='
-                url5 = '%3AA03%3AA04&mapX=&mapY=&mapLevel=&page='
-                url6 = '&articlePage=&ptpNo=&rltrId=&mnex=&bildNo=&articleOrderCode=&cpId=&period=&prodTab=&atclNo=&atclRletTypeCd=&location=2520&bbs_tp_cd=&sort=&siteOrderCode=#_content_list_target'
-
-                for i in range(nPage):
-                    url = url1 + typeCode + url2 + subC4['code'] + url3 + subC3['c3Code'] + url4 + typeCode + url5 + unicode(i+1) + url6
-                    print url
-                    try:
-                        r = requests.get(url, timeout=5.0)
-                        getc4SubList(r.text, c4ListSubElement)
-
-                    except requests.exceptions.ConnectionError as e:
-                        print 're-requesting...'
-
-                for subElement in c4ListSubElement:
-                    c4ListSub['c1Code'] = subC3['c1Code']
-                    c4ListSub['c1NameKR'] = subC3['c1NameKR']
-                    c4ListSub['c2Code'] = subC3['c2Code']
-                    c4ListSub['c2NameKR'] = subC3['c2NameKR']
-                    c4ListSub['c3Code'] = subC3['c3Code']
-                    c4ListSub['c3NameKR'] = subC3['c3NameKR']
-                    c4ListSub['count'] = subC3['count']
-
-                    c4ListSub['c4NameKR'] = subC4['name']
-                    c4ListSub['c4Code'] = subC4['code']
-                    c4ListSub['c4Mapx'] = subC4['mapx']
-                    c4ListSub['c4Mapy'] = subC4['mapy']
-                    c4ListSub['c4SaleTrade'] = subC4['sale_trade']
-                    c4ListSub['c4SaleLease'] = subC4['sale_lease']
-                    c4ListSub['c4SaleRent'] = subC4['sale_rent']
-                    c4ListSub['c4SaleTotal'] = subC4['sale_total']
-
-                    c4ListSub['c4AptTradeType'] = subElement['class']
-                    c4ListSub['c4AptRegisterDate'] = subElement['date']
-                    c4ListSub['c4AptTradeFlag'] = subElement['tradeFlag']
-                    c4ListSub['c4AptComplexNameKR'] = subElement['complex']
-                    c4ListSub['c4AptAreaDisplay'] = subElement['area_display']
-                    c4ListSub['c4AptAreaSupply'] = subElement['area_supply']
-                    c4ListSub['c4AptNetArea'] = subElement['net_area']
-                    c4ListSub['c4AptBlock'] = subElement['block']
-                    c4ListSub['c4AptFloor'] = subElement['floor']
-                    c4ListSub['c4AptPrice'] = subElement['price']
-                    c4ListSub['c4AptBrokerStoreNameKR'] = subElement['store']
-                    c4ListSub['c4AptBrokerStoreTel'] = subElement['store_tel']
-                    c4ListSub['c4AptBrokerStoreCode'] = subElement['store_code']
-
-                    c4List.append(copy.deepcopy(c4ListSub))
-
-        except requests.exceptions.ConnectionError as e:
-            print 're-requesting...'
-
-    return c4List
