@@ -1,6 +1,7 @@
 import bs4
 import requests
 from selenium import webdriver
+import platform
 import IO
 import codecs
 '''
@@ -69,13 +70,9 @@ def getc2Code(c1List, realEstateCode):
         url_list.append(url)
 
     c2List = []
+    driver = webdriver.PhantomJS(executable_path='C:\\Users\\User\\Downloads\\phantomjs-2.0.0-windows\\phantomjs-2.0.0-windows\\bin\\phantomjs.exe')
     for idx, url in enumerate(url_list):
-        #r = requests.get(url)
-        #subc2List = getc2Parsing(r.text)
-        print url
-        driver = webdriver.PhantomJS(executable_path='C:\\Users\\User\\Downloads\\phantomjs-2.0.0-windows\\phantomjs-2.0.0-windows\\bin\\phantomjs.exe')
         driver.get(url)
-
         if c1List[idx]['c1Code'] == '1320000':
             subItem = {}
             subItem['c1Code'] = c1List[idx]['c1Code']
@@ -87,7 +84,6 @@ def getc2Code(c1List, realEstateCode):
 
         else:
             subc2List = getc2Parsing(driver.page_source)
-
             for item in subc2List:
                 subItem = {}
                 subItem['c1Code'] = c1List[idx]['c1Code']
@@ -108,7 +104,6 @@ def getc2Parsing(text):
         items = {}
         items['c2Code'] = item.find('a')['href'].split('/')[3].encode('ascii','ignore')
         items['c2NameKR'] = item.text
-
         item_list.append(items)
 
     return item_list
@@ -124,12 +119,8 @@ def getc3Code(c2List, realEstateCode):
         url_list.append(url)
 
     c3List = []
+    driver = webdriver.PhantomJS(executable_path='C:\\Users\\User\\Downloads\\phantomjs-2.0.0-windows\\phantomjs-2.0.0-windows\\bin\\phantomjs.exe')
     for idx, url in enumerate(url_list):
-        print url
-        #r = requests.get(url)
-        #subc3List = getc3Parsing(r.text)
-
-        driver = webdriver.PhantomJS(executable_path='C:\\Users\\User\\Downloads\\phantomjs-2.0.0-windows\\phantomjs-2.0.0-windows\\bin\\phantomjs.exe')
         driver.get(url)
         subc3List = getc3Parsing(driver.page_source)
 
@@ -228,22 +219,59 @@ def getc4List(c4Code, realEstateCode):
     url_list = []
     for subItem in c4Code:
         url1 = 'http://realestate.daum.net/iframe/maemul/DanjiMaemulList.daum?mcateCode='
-        estateCode = realEstateCode
-        url2 = '&saleTypeCode=*&tabName=maemullist&fullload=Y&isSection=Y&danjiId='
+        realEstateCode = realEstateCode
+        url2 = '&saleTypeCode=*&isSection=Y&fullload=Y&tabName=maemullist&danjiId='
         c4code = subItem['c4Code']
-        url = url1 + estateCode + url2 + c4code
+
+        url = url1 + realEstateCode + url2 + c4code
         url_list.append(url)
 
     c4List = []
+    driver = webdriver.PhantomJS(executable_path='C:\\Users\\User\\Downloads\\phantomjs-2.0.0-windows\\phantomjs-2.0.0-windows\\bin\\phantomjs.exe')
     for idx, url in enumerate(url_list[0:1]):
-        totalCounts = int(c4Code[idx]['c4TradeCounts']) + int(c4Code[idx]['c4LeaseCounts']) + int(c4Code[idx]['c4RentCounts'])
-        if totalCounts:
-            #driver = webdriver.PhantomJS(executable_path='C:\\Users\\User\\Downloads\\phantomjs-2.0.0-windows\\phantomjs-2.0.0-windows\\bin\\phantomjs.exe')
-            #driver.get(url)
+        driver.get(url)
+        # loading web address of maemul/sise/danji/photo/danjiSize/Tax/New/Comm
+        item_tablist = getc4ListTabAdd(driver.page_source)
 
-            text = IO.loadPageSource('sample1.html')
-            #subc4List = getc4ListParsing(driver.page_source)
-            subc4List = getc4ListParsing(text)
+        totalCounts = int(c4Code[idx]['c4TradeCounts']) + int(c4Code[idx]['c4LeaseCounts']) + int(c4Code[idx]['c4RentCounts'])
+
+        if totalCounts:
+            pageIdx = 1
+            validFlag = True
+
+            while (validFlag == True):
+                pageUrl = url + '&page=' + str(pageIdx)
+                driver.get(pageUrl)
+                validFlag = isValidSales(driver.page_source)
+                if validFlag == True:
+                    subc4list = getc4ListParsing(driver.page_source)
+                    pageIdx += 1
+
+def getc4ListTabAdd(text):
+    soup = bs4.BeautifulSoup(text, "html.parser")
+    tab_list_text = soup.find('div', {'class': 'tab_maemularea2 exclude_crawl'})
+
+    tab_list = tab_list_text.findAll('li')
+    tablist = []
+    for tab in tab_list:
+        sublist = []
+        tabaddress = 'http://realestate.daum.net' + tab.find('a').get('href')
+        tabname =  tab.text.strip().replace(" ","")
+        sublist.append(tabaddress)
+        sublist.append(tabname)
+        tablist.append(sublist)
+
+    return tablist
+
+def isValidSales(text):
+    soup = bs4.BeautifulSoup(text, "html.parser")
+    nodata = soup.find('div', {"class" : "box_no_data box_no_data_type_2"})
+
+    if nodata is None:
+        return True
+    else:
+        return False
+
 
 def getc4ListParsing(text):
     item_list = []
@@ -284,49 +312,15 @@ def getc4ListParsing(text):
                     estateFloor = subItem[6].text.replace('\n','').strip().split('/')[0]
                     estateTotalFloor = subItem[6].findAll("span", {"class": "txt_num"})[0].string
 
-                    print subItem[7].find('a').get('href')
-                    print subItem[7].text
+                    #print subItem[7].find('a').get('href')
+                    #print subItem[7].text
 
                     #print '2'
                     #print subItemList[i*3 + 1]
                     #print '3'
                     #print subItemList[i*3 + 2]
 
-
-
-    '''
-    # drilling
-
-    url1 = 'http://realestate.daum.net/iframe/maemul/DanjiMaemulList.daum?mcateCode=A1A3A4&saleTypeCode=*&tabName=maemullist&fullload=Y&isSection=Y&danjiId=4753'
-    url2 = 'http://realestate.daum.net/iframe/maemul/DanjiMaemulList.daum?mcateCode=A1A3A4&saleTypeCode=*&tabName=maemullist&fullload=Y&isSection=Y&danjiId=11719'
-    url3 = 'http://realestate.daum.net/iframe/maemul/DanjiMaemulList.daum?mcateCode=A1A3A4&saleTypeCode=*&tabName=maemullist&fullload=Y&isSection=Y&danjiId=1006562'
-    driver = webdriver.PhantomJS(executable_path='C:\\Users\\User\\Downloads\\phantomjs-2.0.0-windows\\phantomjs-2.0.0-windows\\bin\\phantomjs.exe')
-    driver.get(url3)
-
-    soup = bs4.BeautifulSoup(driver.page_source, "html.parser")
-    '''
-    '''
-    theme maemul len(box_info_tbl_top) == 5
-    index = 3
-    non them maemul len(box_info_tbl_top) == 3
-    index = 2
-
-    info_tbl = soup.find('div', {"class": "box_info_tbl_top"})
-    print len(info_tbl)
-    for aa in info_tbl:
-        print '###'
-        print aa
-    '''
-    '''
-    nodata = soup.find('div', {"class" : "box_no_data box_no_data_type_2"})
-    if nodata is None:
-        print 'None'
-
-    else:
-        print 'String'
-
-    # drilling
-    '''
+print platform.system()
 
 flag = 0
 debug = 1
@@ -345,10 +339,10 @@ if flag == 1:
     IO.writeJSON('c4Code.json', c4Code)
 
 else:
-    c1Code = IO.staticLoadJSON('2016-01-08-c1List.json')
-    c2Code = IO.staticLoadJSON('2016-01-08-c2List.json')
-    c3Code = IO.staticLoadJSON('2016-01-08-c3List.json')
-    c4Code = IO.staticLoadJSON('2016-01-08-c4code.json')
+    c1Code = IO.staticLoadJSON('2016-01-15-c1Code.json')
+    c2Code = IO.staticLoadJSON('2016-01-15-c2Code.json')
+    c3Code = IO.staticLoadJSON('2016-01-15-c3Code.json')
+    c4Code = IO.staticLoadJSON('2016-01-15-c4Code.json')
 
 
 c4List = getc4List(c4Code, realEstate_code['APT'])
