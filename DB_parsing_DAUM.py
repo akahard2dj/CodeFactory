@@ -1,6 +1,7 @@
 import bs4
 import requests
 from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
 import platform
 import IO
 import codecs
@@ -34,13 +35,15 @@ realEstate_code = {'APT': 'A1A3A4',
                     'RDV': 'B1'}
 
 
-def getc1Code(realEstateCode):
+def getc1Code(realEstateCode, drvier):
     url1 = 'http://realestate.daum.net/maemul/area/*/'
     url2 = '/*/summary'
     url = url1 + realEstateCode + url2
-    r = requests.get(url)
+    #r = requests.get(url)
+    driver.get(url)
 
-    c1List = getc1Parsing(r.text)
+    #c1List = getc1Parsing(r.text)
+    c1List = getc1Parsing(driver.page_source)
 
     return c1List
 
@@ -59,7 +62,7 @@ def getc1Parsing(text):
 
     return item_list
 
-def getc2Code(c1List, realEstateCode):
+def getc2Code(c1List, realEstateCode ,driver):
     url_list = []
     for subItem in c1List:
         url1 = 'http://realestate.daum.net/maemul/area/'
@@ -68,30 +71,74 @@ def getc2Code(c1List, realEstateCode):
         url2 = '*/summary'
         url = url1 + c1code + '/' + estatecode + '/' + url2
         url_list.append(url)
-
-    c2List = []
-    driver = webdriver.PhantomJS(executable_path='C:\\Users\\User\\Downloads\\phantomjs-2.0.0-windows\\phantomjs-2.0.0-windows\\bin\\phantomjs.exe')
+    '''
     for idx, url in enumerate(url_list):
-        driver.get(url)
-        if c1List[idx]['c1Code'] == '1320000':
-            subItem = {}
-            subItem['c1Code'] = c1List[idx]['c1Code']
-            subItem['c1NameKR'] = c1List[idx]['c1NameKR']
-            subItem['c1Coords'] = c1List[idx]['c1Coords']
-            subItem['c2Code'] = c1List[idx]['c1Code']
-            subItem['c2NameKR'] = c1List[idx]['c1NameKR']
-            c2List.append(subItem)
+        nAttemps = 0
+        successFlag = False
+        while (nAttemps < 5):
+            driver.implicitly_wait(10)
+            driver.set_page_load_timeout(10)
+            try:
+                driver.get(url)
+                print 'c3GetCode: %s requesting...' % (url),
+                subc3List = getc3Parsing(driver.page_source)
 
-        else:
-            subc2List = getc2Parsing(driver.page_source)
-            for item in subc2List:
-                subItem = {}
-                subItem['c1Code'] = c1List[idx]['c1Code']
-                subItem['c1NameKR'] = c1List[idx]['c1NameKR']
-                subItem['c1Coords'] = c1List[idx]['c1Coords']
-                subItem['c2Code'] = item['c2Code']
-                subItem['c2NameKR'] = item['c2NameKR']
-                c2List.append(subItem)
+                for item in subc3List:
+
+                successFlag = True
+                print 'Done'
+                break
+            except TimeoutException as e:
+                nAttemps += 1
+                print '[%s] Retry to connect ... %d/%d' % (e.message, nAttemps+1, 5)
+
+            if successFlag == False:
+                pendingUrlList.append(url)
+    '''
+    c2List = []
+
+    pendingUrlList = []
+    for idx, url in enumerate(url_list):
+        nAttempts = 0
+        successFlag = False
+
+        while (nAttempts < 5):
+            driver.implicitly_wait(10)
+            driver.set_page_load_timeout(10)
+            try:
+                driver.get(url)
+                print 'c2GetCode: %s requesting...' % (url),
+
+                if c1List[idx]['c1Code'] == '1320000':
+                    subItem = {}
+                    subItem['c1Code'] = c1List[idx]['c1Code']
+                    subItem['c1NameKR'] = c1List[idx]['c1NameKR']
+                    subItem['c1Coords'] = c1List[idx]['c1Coords']
+                    subItem['c2Code'] = c1List[idx]['c1Code']
+                    subItem['c2NameKR'] = c1List[idx]['c1NameKR']
+                    c2List.append(subItem)
+
+                else:
+                    subc2List = getc2Parsing(driver.page_source)
+                    for item in subc2List:
+                        subItem = {}
+                        subItem['c1Code'] = c1List[idx]['c1Code']
+                        subItem['c1NameKR'] = c1List[idx]['c1NameKR']
+                        subItem['c1Coords'] = c1List[idx]['c1Coords']
+                        subItem['c2Code'] = item['c2Code']
+                        subItem['c2NameKR'] = item['c2NameKR']
+                        c2List.append(subItem)
+
+                successFlag = True
+                print 'Done'
+                break
+
+            except TimeoutException as e:
+                print 'Retry to connect ... %d/%d' % (nAttempts+1, 5)
+                nAttempts += 1
+
+            if successFlag == False:
+                pendingUrlList.append(url)
 
     return c2List
 
@@ -119,22 +166,41 @@ def getc3Code(c2List, realEstateCode):
         url_list.append(url)
 
     c3List = []
-    driver = webdriver.PhantomJS(executable_path='C:\\Users\\User\\Downloads\\phantomjs-2.0.0-windows\\phantomjs-2.0.0-windows\\bin\\phantomjs.exe')
+
+    pendingUrlList = []
+    #driver = webdriver.PhantomJS(executable_path='C:\\Users\\User\\Downloads\\phantomjs-2.0.0-windows\\phantomjs-2.0.0-windows\\bin\\phantomjs.exe')
     for idx, url in enumerate(url_list):
-        driver.get(url)
-        subc3List = getc3Parsing(driver.page_source)
+        nAttemps = 0
+        successFlag = False
+        while (nAttemps < 5):
+            driver.implicitly_wait(10)
+            driver.set_page_load_timeout(10)
 
-        for item in subc3List:
-            subItem = {}
-            subItem['c1Code'] = c2List[idx]['c1Code']
-            subItem['c1NameKR'] = c2List[idx]['c1NameKR']
-            subItem['c2Code'] = c2List[idx]['c2Code']
-            subItem['c2NameKR'] = c2List[idx]['c2NameKR']
-            subItem['c3Code'] = item['code']
-            subItem['c3NameKR'] = item['nameKR']
-            subItem['c3Counts'] = item['counts']
+            try:
+                driver.get(url)
+                print 'c3GetCode: %s requesting...' % (url),
+                subc3List = getc3Parsing(driver.page_source)
 
-            c3List.append(subItem)
+                for item in subc3List:
+                    subItem = {}
+                    subItem['c1Code'] = c2List[idx]['c1Code']
+                    subItem['c1NameKR'] = c2List[idx]['c1NameKR']
+                    subItem['c2Code'] = c2List[idx]['c2Code']
+                    subItem['c2NameKR'] = c2List[idx]['c2NameKR']
+                    subItem['c3Code'] = item['code']
+                    subItem['c3NameKR'] = item['nameKR']
+                    subItem['c3Counts'] = item['counts']
+
+                    c3List.append(subItem)
+                successFlag = True
+                print 'Done'
+                break
+            except TimeoutException as e:
+                nAttemps += 1
+                print '[%s] Retry to connect ... %d/%d' % (e.message, nAttemps+1, 5)
+
+            if successFlag == False:
+                pendingUrlList.append(url)
 
     return c3List
 
@@ -320,34 +386,34 @@ def getc4ListParsing(text):
                     #print '3'
                     #print subItemList[i*3 + 2]
 
-print platform.system()
-
-flag = 0
-debug = 1
+flag = 1
+debug = 0
 
 if flag == 1:
-    c1Code = getc1Code(realEstate_code['APT'])
+    driver = webdriver.PhantomJS(executable_path='C:\\Users\\User\\Downloads\\phantomjs-2.0.0-windows\\phantomjs-2.0.0-windows\\bin\\phantomjs.exe')
+    c1Code = getc1Code(realEstate_code['APT'], driver)
     IO.writeJSON('c1Code.json', c1Code)
 
-    c2Code = getc2Code(c1Code, realEstate_code['APT'])
+    c2Code = getc2Code(c1Code, realEstate_code['APT'], driver)
     IO.writeJSON('c2Code.json', c2Code)
 
     c3Code = getc3Code(c2Code, realEstate_code['APT'])
     IO.writeJSON('c3Code.json', c3Code)
 
-    c4Code = getc4Code(c3Code, realEstate_code['APT'])
-    IO.writeJSON('c4Code.json', c4Code)
+    #c4Code = getc4Code(c3Code, realEstate_code['APT'])
+    #IO.writeJSON('c4Code.json', c4Code)
 
 else:
-    c1Code = IO.staticLoadJSON('2016-01-15-c1Code.json')
-    c2Code = IO.staticLoadJSON('2016-01-15-c2Code.json')
-    c3Code = IO.staticLoadJSON('2016-01-15-c3Code.json')
-    c4Code = IO.staticLoadJSON('2016-01-15-c4Code.json')
+    c1Code = IO.staticLoadJSON('2016-01-18-c1Code.json')
+    c2Code = IO.staticLoadJSON('2016-01-18-c2Code.json')
+    c3Code = IO.staticLoadJSON('2016-01-18-c3Code.json')
+    c4Code = IO.staticLoadJSON('2016-01-18-c4Code.json')
 
 
-c4List = getc4List(c4Code, realEstate_code['APT'])
+#c4List = getc4List(c4Code, realEstate_code['APT'])
 
 
 if debug == 0:
-    for aa in c4Code:
-        print aa['c1Code'], aa['c2Code'],  aa['c3Code'], aa['c4Code'], aa['c1NameKR'], aa['c2NameKR'], aa['c3NameKR'], aa['c4NameKR'], aa['c4TradeCounts'], aa['c4LeaseCounts'], aa['c4RentCounts']
+    for aa in c2Code:
+        #print aa['c1Code'], aa['c2Code'],  aa['c3Code'], aa['c4Code'], aa['c1NameKR'], aa['c2NameKR'], aa['c3NameKR'], aa['c4NameKR'], aa['c4TradeCounts'], aa['c4LeaseCounts'], aa['c4RentCounts']
+        print aa['c1Code'], aa['c2Code'], aa['c1NameKR'], aa['c2NameKR']
