@@ -345,6 +345,7 @@ def getc4ListParsing(text):
     box_info_tbl_top = soup.find('div', {"class": "box_info_tbl_top"})
 
     countFlag = len(box_info_tbl_top)
+    print countFlag
 
     if countFlag == 3:
         for idx, listItem in enumerate(box_info_tbl_top):
@@ -386,10 +387,281 @@ def getc4ListParsing(text):
                     #print '3'
                     #print subItemList[i*3 + 2]
 
-flag = 1
-debug = 0
+    if countFlag == 5:
+        title_theme = box_info_tbl_top.findAll('h3', {"class": "tit_theme"})
 
-if flag == 1:
+        for idx, listItem in enumerate(box_info_tbl_top):
+            if idx == 1:
+                # selection box parsing
+                type_tbl = listItem.find('table', {"class": "tbl_themelist tbl_themelist_type1 tbl_dong"})
+                scopeList = type_tbl.findAll('th', {"scope": "col"})
+
+                # scopeList exp.
+                # 0 - date
+                # 1 - estatetype
+                # 2 - name of complex
+                # 3 - area type info.
+                # 4 - price
+                # 5 - dong
+                # 6 - floor
+                # 7 - contact
+
+                # area type information
+                #areaTypeList = scopeList[3].find('ul', {"class": "search_selbox_list"}).findAll('li')
+                areaTypeList = scopeList[3].findAll('li')
+                areaType = []
+                for idx, aType in enumerate(areaTypeList[1:]):
+                    areaType.append(aType.text)
+
+
+                # Complex information
+                complexList_list = scopeList[5].findAll('option')
+                complexList = []
+                for idx, cType in enumerate(complexList_list[1:]):
+                    complexList.append(cType.text)
+
+                # floor information
+                floorList_list = scopeList[6].findAll('option')
+                floorList = []
+                for idx, fType in enumerate(floorList_list[1:]):
+                    floorList.append(fType.text)
+
+                subItemList = listItem.find('tbody').findAll('tr')
+                nSubItem = len(subItemList)/3
+                for i in xrange(nSubItem):
+                    subItem = subItemList[i*3 + 0].findAll('td')
+
+                    #td 1
+                    sellingType = subItem[0].findAll("a", {"class": "link_txt"})[0].string
+                    sellingDate = subItem[0].findAll("em", {"class": "txt_date"})[0].string
+
+                    #td 2
+                    estateType = subItem[1].findAll("a", {"class": "link_txt"})[0].string
+                    c3Name = subItem[1].findAll("a", {"class": "link_txt"})[1].string
+
+                    #td 3
+                    estateNameKR = subItem[2].findAll("a", {"class": "link_apt"})[0].string
+
+                    #td 4
+                    areaValue = subItem[3].findAll("span", {"class": "txt_size"})
+                    supplyArea = areaValue[0].string
+                    netArea = areaValue[1].string
+                    declareArea = subItem[3].findAll("a", {"class": "link_txt"})[0].string
+                    declareTypeArea = declareArea.split('/')[0]
+
+                    #td 5
+                    sellingPrice = subItem[4].findAll("a", {"class": "link_txt"})[0].string
+
+                    #td 6
+                    estateComplex = subItem[5].findAll("a", {"class": "link_txt"})[0].string
+
+                    #td 7
+                    estateFloor = subItem[6].text.replace('\n','').strip().split('/')[0]
+                    estateTotalFloor = subItem[6].findAll("span", {"class": "txt_num"})[0].string
+
+                    #td 8
+                    contactLink = subItem[7].find("a")['href']
+                    contactNumber = subItem[7].findAll("a")[1].text
+
+                    subItem = subItemList[i*3 + 1].findAll('td')
+                    #td 1
+                    estateDescList_text = subItem[0].find('span', {"class": "box_desc"})
+                    estateDescList = estateDescList_text.findAll("span")
+                    ## TBD
+
+                    print title_theme[0].text,estateNameKR, sellingDate, sellingType, sellingPrice
+
+            if idx == 3:
+                subItemList = listItem.find('tbody').findAll('tr')
+                nSubItem = len(subItemList)/3
+                for i in xrange(nSubItem):
+                    subItem = subItemList[i*3 + 0].findAll('td')
+
+                    #td 1
+                    sellingType = subItem[0].findAll("a", {"class": "link_txt"})[0].string
+                    sellingDate = subItem[0].findAll("em", {"class": "txt_date"})[0].string
+
+                    #td 2
+                    estateType = subItem[1].findAll("a", {"class": "link_txt"})[0].string
+                    c3Name = subItem[1].findAll("a", {"class": "link_txt"})[1].string
+
+                    #td 3
+                    estateNameKR = subItem[2].findAll("a", {"class": "link_apt"})[0].string
+
+                    #td 4
+                    areaValue = subItem[3].findAll("span", {"class": "txt_size"})
+                    supplyArea = areaValue[0].string
+                    netArea = areaValue[1].string
+                    declareArea = subItem[3].findAll("a", {"class": "link_txt"})[0].string
+                    declareTypeArea = declareArea.split('/')[0]
+
+                    #td 5
+                    sellingPrice = subItem[4].findAll("a", {"class": "link_txt"})[0].string
+
+                    #td 6
+                    estateComplex = subItem[5].findAll("a", {"class": "link_txt"})[0].string
+
+                    #td 7
+                    estateFloor = subItem[6].text.replace('\n','').strip().split('/')[0]
+                    estateTotalFloor = subItem[6].findAll("span", {"class": "txt_num"})[0].string
+
+                    #td 8
+                    contactLink = subItem[7].find("a")['href']
+                    contactNumber = subItem[7].findAll("a")[1].text
+
+                    subItem = subItemList[i*3 + 1].findAll('td')
+                    #td 1
+                    estateDescList_text = subItem[0].find('span', {"class": "box_desc"})
+                    estateDescList = estateDescList_text.findAll("span")
+                    ## TBD
+
+                    print title_theme[1].text,estateNameKR, sellingDate, sellingType, sellingPrice
+
+    if countFlag == 9:
+        title_theme = box_info_tbl_top.findAll('h3', {"class": "tit_theme"})
+        for idx, listItem in enumerate(box_info_tbl_top):
+            if idx == 1:
+                    subItemList = listItem.find('tbody').findAll('tr')
+                    nSubItem = len(subItemList)/3
+                    for i in xrange(nSubItem):
+                        subItem = subItemList[i*3 + 0].findAll('td')
+
+                        #td 1
+                        sellingType = subItem[0].findAll("a", {"class": "link_txt"})[0].string
+                        sellingDate = subItem[0].findAll("em", {"class": "txt_date"})[0].string
+
+                        #td 2
+                        estateType = subItem[1].findAll("a", {"class": "link_txt"})[0].string
+                        c3Name = subItem[1].findAll("a", {"class": "link_txt"})[1].string
+
+                        #td 3
+                        estateNameKR = subItem[2].findAll("a", {"class": "link_apt"})[0].string
+
+                        #td 4
+                        areaValue = subItem[3].findAll("span", {"class": "txt_size"})
+                        supplyArea = areaValue[0].string
+                        netArea = areaValue[1].string
+                        declareArea = subItem[3].findAll("a", {"class": "link_txt"})[0].string
+                        declareTypeArea = declareArea.split('/')[0]
+
+                        #td 5
+                        sellingPrice = subItem[4].findAll("a", {"class": "link_txt"})[0].string
+
+                        #td 6
+                        estateComplex = subItem[5].findAll("a", {"class": "link_txt"})[0].string
+
+                        #td 7
+                        estateFloor = subItem[6].text.replace('\n','').strip().split('/')[0]
+                        estateTotalFloor = subItem[6].findAll("span", {"class": "txt_num"})[0].string
+
+                        #td 8
+                        contactLink = subItem[7].find("a")['href']
+                        contactNumber = subItem[7].findAll("a")[1].text
+
+                        subItem = subItemList[i*3 + 1].findAll('td')
+                        #td 1
+                        estateDescList_text = subItem[0].find('span', {"class": "box_desc"})
+                        estateDescList = estateDescList_text.findAll("span")
+                        ## TBD
+
+                        print title_theme[1].text,estateNameKR, sellingDate, sellingType, sellingPrice
+            if idx == 3:
+                    subItemList = listItem.find('tbody').findAll('tr')
+                    nSubItem = len(subItemList)/3
+                    for i in xrange(nSubItem):
+                        subItem = subItemList[i*3 + 0].findAll('td')
+
+                        #td 1
+                        sellingType = subItem[0].findAll("a", {"class": "link_txt"})[0].string
+                        sellingDate = subItem[0].findAll("em", {"class": "txt_date"})[0].string
+
+                        #td 2
+                        estateType = subItem[1].findAll("a", {"class": "link_txt"})[0].string
+                        c3Name = subItem[1].findAll("a", {"class": "link_txt"})[1].string
+
+                        #td 3
+                        estateNameKR = subItem[2].findAll("a", {"class": "link_apt"})[0].string
+
+                        #td 4
+                        areaValue = subItem[3].findAll("span", {"class": "txt_size"})
+                        supplyArea = areaValue[0].string
+                        netArea = areaValue[1].string
+                        declareArea = subItem[3].findAll("a", {"class": "link_txt"})[0].string
+                        declareTypeArea = declareArea.split('/')[0]
+
+                        #td 5
+                        sellingPrice = subItem[4].findAll("a", {"class": "link_txt"})[0].string
+
+                        #td 6
+                        estateComplex = subItem[5].findAll("a", {"class": "link_txt"})[0].string
+
+                        #td 7
+                        estateFloor = subItem[6].text.replace('\n','').strip().split('/')[0]
+                        estateTotalFloor = subItem[6].findAll("span", {"class": "txt_num"})[0].string
+
+                        #td 8
+                        contactLink = subItem[7].find("a")['href']
+                        contactNumber = subItem[7].findAll("a")[1].text
+
+                        subItem = subItemList[i*3 + 1].findAll('td')
+                        #td 1
+                        estateDescList_text = subItem[0].find('span', {"class": "box_desc"})
+                        estateDescList = estateDescList_text.findAll("span")
+                        ## TBD
+
+                        print title_theme[1].text,estateNameKR, sellingDate, sellingType, sellingPrice
+            if idx == 5:
+                    subItemList = listItem.find('tbody').findAll('tr')
+                    nSubItem = len(subItemList)/3
+                    for i in xrange(nSubItem):
+                        subItem = subItemList[i*3 + 0].findAll('td')
+
+                        #td 1
+                        sellingType = subItem[0].findAll("a", {"class": "link_txt"})[0].string
+                        sellingDate = subItem[0].findAll("em", {"class": "txt_date"})[0].string
+
+                        #td 2
+                        estateType = subItem[1].findAll("a", {"class": "link_txt"})[0].string
+                        c3Name = subItem[1].findAll("a", {"class": "link_txt"})[1].string
+
+                        #td 3
+                        estateNameKR = subItem[2].findAll("a", {"class": "link_apt"})[0].string
+
+                        #td 4
+                        areaValue = subItem[3].findAll("span", {"class": "txt_size"})
+                        supplyArea = areaValue[0].string
+                        netArea = areaValue[1].string
+                        declareArea = subItem[3].findAll("a", {"class": "link_txt"})[0].string
+                        declareTypeArea = declareArea.split('/')[0]
+
+                        #td 5
+                        sellingPrice = subItem[4].findAll("a", {"class": "link_txt"})[0].string
+
+                        #td 6
+                        estateComplex = subItem[5].findAll("a", {"class": "link_txt"})[0].string
+
+                        #td 7
+                        estateFloor = subItem[6].text.replace('\n','').strip().split('/')[0]
+                        estateTotalFloor = subItem[6].findAll("span", {"class": "txt_num"})[0].string
+
+                        #td 8
+                        contactLink = subItem[7].find("a")['href']
+                        contactNumber = subItem[7].findAll("a")[1].text
+
+                        subItem = subItemList[i*3 + 1].findAll('td')
+                        #td 1
+                        estateDescList_text = subItem[0].find('span', {"class": "box_desc"})
+                        estateDescList = estateDescList_text.findAll("span")
+                        ## TBD
+
+                        print title_theme[2].text,estateNameKR, sellingDate, sellingType, sellingPrice
+            
+
+
+flag = 1
+debug = 1
+
+if flag == 0:
     driver = webdriver.PhantomJS(executable_path='C:\\Users\\User\\Downloads\\phantomjs-2.0.0-windows\\phantomjs-2.0.0-windows\\bin\\phantomjs.exe')
     c1Code = getc1Code(realEstate_code['APT'], driver)
     IO.writeJSON('c1Code.json', c1Code)
@@ -404,13 +676,13 @@ if flag == 1:
     #IO.writeJSON('c4Code.json', c4Code)
 
 else:
-    c1Code = IO.staticLoadJSON('2016-01-18-c1Code.json')
-    c2Code = IO.staticLoadJSON('2016-01-18-c2Code.json')
-    c3Code = IO.staticLoadJSON('2016-01-18-c3Code.json')
-    c4Code = IO.staticLoadJSON('2016-01-18-c4Code.json')
+    c1Code = IO.staticLoadJSON('2016-01-25-c1Code.json')
+    c2Code = IO.staticLoadJSON('2016-01-25-c2Code.json')
+    c3Code = IO.staticLoadJSON('2016-01-25-c3Code.json')
+    #c4Code = IO.staticLoadJSON('2016-01-18-c4Code.json')
 
 
-#c4List = getc4List(c4Code, realEstate_code['APT'])
+c4List = getc4ListParsing(open('case3.html','r'))
 
 
 if debug == 0:
