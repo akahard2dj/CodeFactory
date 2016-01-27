@@ -605,6 +605,7 @@ driver = webdriver.PhantomJS(executable_path='C:\\Users\\User\\Downloads\\phanto
 url = 'http://realestate.daum.net/iframe/maemul/DanjiMaemulList.daum?mcateCode=A1A3A4&saleTypeCode=*&tabName=maemullist&fullload=Y&isSection=Y&danjiId=4753'
 driver.get(url)
 
+
 c4List = getc4ListParsing(driver.page_source, driver)
 
 if debug == 0:
