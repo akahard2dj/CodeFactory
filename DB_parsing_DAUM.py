@@ -352,32 +352,27 @@ def isValidSales(text):
         return False
 
 
-def getc4ListParsing(text):
+def getc4ListParsing(text, driver):
     item_list = []
     soup = bs4.BeautifulSoup(text, "html.parser")
     box_info_tbl_top = soup.find('div', {"class": "box_info_tbl_top"})
-
-    countFlag = len(box_info_tbl_top)
-    print countFlag
 
     for idx, listItem in enumerate(box_info_tbl_top):
         if idx % 2 == 1:
             title_theme = listItem.find('h3', {"class": "tit_theme"})
             if title_theme.text == '테마매물'.decode('utf-8'):
-                getc4ListParsingThemeMaemul(listItem)
+                getc4ListParsingThemeMaemul(listItem, title_theme.text, driver)
 
             if title_theme.text == '추천매물'.decode('utf-8'):
-                getc4ListParsingRecommMaemul(listItem)
+                getc4ListParsingRecommMaemul(listItem, title_theme.text)
 
             if title_theme.text == '일반매물'.decode('utf-8'):
-                getc4ListParsingGeneralMaemul(listItem)
+                getc4ListParsingGeneralMaemul(listItem, title_theme.text)
 
             if title_theme.text == '한국공인중개사협회매물'.decode('utf-8'):
-                getc4ListParsingAgencyMaemul(listItem)
+                getc4ListParsingAgencyMaemul(listItem, title_theme.text)
 
-
-
-def getc4ListParsingThemeMaemul(bs4List):
+def getc4ListParsing3Indexing(bs4List, titleName):
     subItemList = bs4List.find('tbody').findAll('tr')
     nSubItem = len(subItemList) / 3
     for i in xrange(nSubItem):
@@ -421,346 +416,165 @@ def getc4ListParsingThemeMaemul(bs4List):
         estateDescList = estateDescList_text.findAll("span")
         ## TBD
 
-        print estateNameKR, sellingDate, sellingType, sellingPrice
+        print titleName, estateNameKR, sellingDate, sellingType, sellingPrice
+
+def getc4ListParsingThemeMaemul(bs4List, titleName, driver):
+    detailbtn = bs4List.find('div', {"class": "box_detailbtn"})
+
+    if detailbtn is None:
+        getc4ListParsing3Indexing(bs4List, titleName)
+
+    else:
+        detailUrl = 'http://realestate.daum.net/' + detailbtn.find("a")['href']
+        driver.get(detailUrl)
+        soup = bs4.BeautifulSoup(driver.page_source, "html.parser")
+        print detailUrl
+    '''
+    subItemList = bs4List.find('tbody').findAll('tr')
+    nSubItem = len(subItemList) / 3
+    for i in xrange(nSubItem):
+        subItem = subItemList[i * 3 + 0].findAll('td')
+
+        # td 1
+        sellingType = subItem[0].findAll("a", {"class": "link_txt"})[0].string
+        sellingDate = subItem[0].findAll("em", {"class": "txt_date"})[0].string
+
+        # td 2
+        estateType = subItem[1].findAll("a", {"class": "link_txt"})[0].string
+        c3Name = subItem[1].findAll("a", {"class": "link_txt"})[1].string
+
+        # td 3
+        estateNameKR = subItem[2].findAll("a", {"class": "link_apt"})[0].string
+
+        # td 4
+        areaValue = subItem[3].findAll("span", {"class": "txt_size"})
+        supplyArea = areaValue[0].string
+        netArea = areaValue[1].string
+        declareArea = subItem[3].findAll("a", {"class": "link_txt"})[0].string
+        declareTypeArea = declareArea.split('/')[0]
+
+        # td 5
+        sellingPrice = subItem[4].findAll("a", {"class": "link_txt"})[0].string
+
+        # td 6
+        estateComplex = subItem[5].findAll("a", {"class": "link_txt"})[0].string
+
+        # td 7
+        estateFloor = subItem[6].text.replace('\n', '').strip().split('/')[0]
+        estateTotalFloor = subItem[6].findAll("span", {"class": "txt_num"})[0].string
+
+        # td 8
+        contactLink = subItem[7].find("a")['href']
+        contactNumber = subItem[7].findAll("a")[1].text
+
+        subItem = subItemList[i * 3 + 1].findAll('td')
+        # td 1
+        estateDescList_text = subItem[0].find('span', {"class": "box_desc"})
+        estateDescList = estateDescList_text.findAll("span")
+        ## TBD
+
+        print titleName, estateNameKR, sellingDate, sellingType, sellingPrice
+    '''
+
+def getc4ListParsingGeneralMaemul(bs4List, titleName):
+    subItemList = bs4List.find('tbody').findAll('tr')
+    nSubItem = len(subItemList) / 3
+    for i in xrange(nSubItem):
+        subItem = subItemList[i * 3 + 0].findAll('td')
+
+        # td 1
+        sellingType = subItem[0].findAll("a", {"class": "link_txt"})[0].string
+        sellingDate = subItem[0].findAll("em", {"class": "txt_date"})[0].string
+
+        # td 2
+        estateType = subItem[1].findAll("a", {"class": "link_txt"})[0].string
+        c3Name = subItem[1].findAll("a", {"class": "link_txt"})[1].string
+
+        # td 3
+        estateNameKR = subItem[2].findAll("a", {"class": "link_apt"})[0].string
+
+        # td 4
+        areaValue = subItem[3].findAll("span", {"class": "txt_size"})
+        supplyArea = areaValue[0].string
+        netArea = areaValue[1].string
+        declareArea = subItem[3].findAll("a", {"class": "link_txt"})[0].string
+        declareTypeArea = declareArea.split('/')[0]
+
+        # td 5
+        sellingPrice = subItem[4].findAll("a", {"class": "link_txt"})[0].string
+
+        # td 6
+        estateComplex = subItem[5].findAll("a", {"class": "link_txt"})[0].string
+
+        # td 7
+        estateFloor = subItem[6].text.replace('\n', '').strip().split('/')[0]
+        estateTotalFloor = subItem[6].findAll("span", {"class": "txt_num"})[0].string
+
+        # td 8
+        contactLink = subItem[7].find("a")['href']
+        contactNumber = subItem[7].findAll("a")[1].text
+
+        subItem = subItemList[i * 3 + 1].findAll('td')
+        # td 1
+        estateDescList_text = subItem[0].find('span', {"class": "box_desc"})
+        estateDescList = estateDescList_text.findAll("span")
+        ## TBD
+
+        print titleName, estateNameKR, sellingDate, sellingType, sellingPrice
 
 
-def getc4ListParsingGeneralMaemul(bs4List):
-    title_theme = bs4List.findAll('h3', {"class": "tit_theme"})
-    print '***#'
-    for ii in title_theme:
-        print ii.text
-    print '***#'
+def getc4ListParsingRecommMaemul(bs4List, titleName):
+    subItemList = bs4List.find('tbody').findAll('tr')
+    nSubItem = len(subItemList) / 3
+    for i in xrange(nSubItem):
+        subItem = subItemList[i * 3 + 0].findAll('td')
 
+        # td 1
+        sellingType = subItem[0].findAll("a", {"class": "link_txt"})[0].string
+        sellingDate = subItem[0].findAll("em", {"class": "txt_date"})[0].string
 
-def getc4ListParsingRecommMaemul(bs4List):
-    title_theme = bs4List.findAll('h3', {"class": "tit_theme"})
-    print '*##**#'
-    for ii in title_theme:
-        print ii.text
-    print '*##**#'
+        # td 2
+        estateType = subItem[1].findAll("a", {"class": "link_txt"})[0].string
+        c3Name = subItem[1].findAll("a", {"class": "link_txt"})[1].string
 
-def getc4ListParsingAgencyMaemul(bs4List):
+        # td 3
+        estateNameKR = subItem[2].findAll("a", {"class": "link_apt"})[0].string
+
+        # td 4
+        areaValue = subItem[3].findAll("span", {"class": "txt_size"})
+        supplyArea = areaValue[0].string
+        netArea = areaValue[1].string
+        declareArea = subItem[3].findAll("a", {"class": "link_txt"})[0].string
+        declareTypeArea = declareArea.split('/')[0]
+
+        # td 5
+        sellingPrice = subItem[4].findAll("a", {"class": "link_txt"})[0].string
+
+        # td 6
+        estateComplex = subItem[5].findAll("a", {"class": "link_txt"})[0].string
+
+        # td 7
+        estateFloor = subItem[6].text.replace('\n', '').strip().split('/')[0]
+        estateTotalFloor = subItem[6].findAll("span", {"class": "txt_num"})[0].string
+
+        # td 8
+        contactLink = subItem[7].find("a")['href']
+        contactNumber = subItem[7].findAll("a")[1].text
+
+        subItem = subItemList[i * 3 + 1].findAll('td')
+        # td 1
+        estateDescList_text = subItem[0].find('span', {"class": "box_desc"})
+        estateDescList = estateDescList_text.findAll("span")
+        ## TBD
+
+        print titleName, estateNameKR, sellingDate, sellingType, sellingPrice
+
+def getc4ListParsingAgencyMaemul(bs4List, titleName):
     title_theme = bs4List.findAll('h3', {"class": "tit_theme"})
     print '*1111'
     for ii in title_theme:
         print ii.text
     print '*#2424#'
-
-def getc4ListParsing2(text):
-    item_list = []
-    soup = bs4.BeautifulSoup(text, "html.parser")
-    box_info_tbl_top = soup.find('div', {"class": "box_info_tbl_top"})
-
-    countFlag = len(box_info_tbl_top)
-    print countFlag
-
-    if countFlag == 3:
-        for idx, listItem in enumerate(box_info_tbl_top):
-            if idx == 1:
-                subItemList = listItem.find('tbody').findAll('tr')
-
-                nSubItem = len(subItemList) / 3
-                for i in xrange(1):
-                    subItem = subItemList[i * 3 + 0].findAll('td')
-
-                    # volume = soup.findAll("span", {"id": "volume"})[0].string
-                    sellingType = subItem[0].findAll("a", {"class": "link_txt"})[0].string
-                    sellingDate = subItem[0].findAll("em", {"class": "txt_date"})[0].string
-
-                    estateType = subItem[1].findAll("a", {"class": "link_txt"})[0].string
-                    c3Name = subItem[1].findAll("a", {"class": "link_txt"})[1].string
-
-                    # 2 to do
-
-
-                    # areaName = subItem[3].findAll("span", {"class": "tit_size"})
-                    areaValue = subItem[3].findAll("span", {"class": "txt_size"})
-                    supplyArea = areaValue[0].string
-                    netArea = areaValue[1].string
-                    declareArea = subItem[3].findAll("a", {"class": "link_txt"})[0].string
-
-                    sellingPrice = subItem[4].findAll("a", {"class": "link_txt"})[0].string
-
-                    estateComplex = subItem[5].findAll("a", {"class": "link_txt"})[0].string
-
-                    estateFloor = subItem[6].text.replace('\n', '').strip().split('/')[0]
-                    estateTotalFloor = subItem[6].findAll("span", {"class": "txt_num"})[0].string
-
-                    # print subItem[7].find('a').get('href')
-                    # print subItem[7].text
-
-                    # print '2'
-                    # print subItemList[i*3 + 1]
-                    # print '3'
-                    # print subItemList[i*3 + 2]
-
-    if countFlag == 5:
-        title_theme = box_info_tbl_top.findAll('h3', {"class": "tit_theme"})
-
-        for idx, listItem in enumerate(box_info_tbl_top):
-            if idx == 1:
-                # selection box parsing
-                type_tbl = listItem.find('table', {"class": "tbl_themelist tbl_themelist_type1 tbl_dong"})
-                scopeList = type_tbl.findAll('th', {"scope": "col"})
-
-                # scopeList exp.
-                # 0 - date
-                # 1 - estatetype
-                # 2 - name of complex
-                # 3 - area type info.
-                # 4 - price
-                # 5 - dong
-                # 6 - floor
-                # 7 - contact
-
-                # area type information
-                # areaTypeList = scopeList[3].find('ul', {"class": "search_selbox_list"}).findAll('li')
-                areaTypeList = scopeList[3].findAll('li')
-                areaType = []
-                for idx, aType in enumerate(areaTypeList[1:]):
-                    areaType.append(aType.text)
-
-                # Complex information
-                complexList_list = scopeList[5].findAll('option')
-                complexList = []
-                for idx, cType in enumerate(complexList_list[1:]):
-                    complexList.append(cType.text)
-
-                # floor information
-                floorList_list = scopeList[6].findAll('option')
-                floorList = []
-                for idx, fType in enumerate(floorList_list[1:]):
-                    floorList.append(fType.text)
-
-                subItemList = listItem.find('tbody').findAll('tr')
-                nSubItem = len(subItemList) / 3
-                for i in xrange(nSubItem):
-                    subItem = subItemList[i * 3 + 0].findAll('td')
-
-                    # td 1
-                    sellingType = subItem[0].findAll("a", {"class": "link_txt"})[0].string
-                    sellingDate = subItem[0].findAll("em", {"class": "txt_date"})[0].string
-
-                    # td 2
-                    estateType = subItem[1].findAll("a", {"class": "link_txt"})[0].string
-                    c3Name = subItem[1].findAll("a", {"class": "link_txt"})[1].string
-
-                    # td 3
-                    estateNameKR = subItem[2].findAll("a", {"class": "link_apt"})[0].string
-
-                    # td 4
-                    areaValue = subItem[3].findAll("span", {"class": "txt_size"})
-                    supplyArea = areaValue[0].string
-                    netArea = areaValue[1].string
-                    declareArea = subItem[3].findAll("a", {"class": "link_txt"})[0].string
-                    declareTypeArea = declareArea.split('/')[0]
-
-                    # td 5
-                    sellingPrice = subItem[4].findAll("a", {"class": "link_txt"})[0].string
-
-                    # td 6
-                    estateComplex = subItem[5].findAll("a", {"class": "link_txt"})[0].string
-
-                    # td 7
-                    estateFloor = subItem[6].text.replace('\n', '').strip().split('/')[0]
-                    estateTotalFloor = subItem[6].findAll("span", {"class": "txt_num"})[0].string
-
-                    # td 8
-                    contactLink = subItem[7].find("a")['href']
-                    contactNumber = subItem[7].findAll("a")[1].text
-
-                    subItem = subItemList[i * 3 + 1].findAll('td')
-                    # td 1
-                    estateDescList_text = subItem[0].find('span', {"class": "box_desc"})
-                    estateDescList = estateDescList_text.findAll("span")
-                    ## TBD
-
-                    print title_theme[0].text, estateNameKR, sellingDate, sellingType, sellingPrice
-
-            if idx == 3:
-                subItemList = listItem.find('tbody').findAll('tr')
-                nSubItem = len(subItemList) / 3
-                for i in xrange(nSubItem):
-                    subItem = subItemList[i * 3 + 0].findAll('td')
-
-                    # td 1
-                    sellingType = subItem[0].findAll("a", {"class": "link_txt"})[0].string
-                    sellingDate = subItem[0].findAll("em", {"class": "txt_date"})[0].string
-
-                    # td 2
-                    estateType = subItem[1].findAll("a", {"class": "link_txt"})[0].string
-                    c3Name = subItem[1].findAll("a", {"class": "link_txt"})[1].string
-
-                    # td 3
-                    estateNameKR = subItem[2].findAll("a", {"class": "link_apt"})[0].string
-
-                    # td 4
-                    areaValue = subItem[3].findAll("span", {"class": "txt_size"})
-                    supplyArea = areaValue[0].string
-                    netArea = areaValue[1].string
-                    declareArea = subItem[3].findAll("a", {"class": "link_txt"})[0].string
-                    declareTypeArea = declareArea.split('/')[0]
-
-                    # td 5
-                    sellingPrice = subItem[4].findAll("a", {"class": "link_txt"})[0].string
-
-                    # td 6
-                    estateComplex = subItem[5].findAll("a", {"class": "link_txt"})[0].string
-
-                    # td 7
-                    estateFloor = subItem[6].text.replace('\n', '').strip().split('/')[0]
-                    estateTotalFloor = subItem[6].findAll("span", {"class": "txt_num"})[0].string
-
-                    # td 8
-                    contactLink = subItem[7].find("a")['href']
-                    contactNumber = subItem[7].findAll("a")[1].text
-
-                    subItem = subItemList[i * 3 + 1].findAll('td')
-                    # td 1
-                    estateDescList_text = subItem[0].find('span', {"class": "box_desc"})
-                    estateDescList = estateDescList_text.findAll("span")
-                    ## TBD
-
-                    print title_theme[1].text, estateNameKR, sellingDate, sellingType, sellingPrice
-
-    if countFlag == 9:
-        title_theme = box_info_tbl_top.findAll('h3', {"class": "tit_theme"})
-        for idx, listItem in enumerate(box_info_tbl_top):
-            if idx == 1:
-                subItemList = listItem.find('tbody').findAll('tr')
-                nSubItem = len(subItemList) / 3
-                for i in xrange(nSubItem):
-                    subItem = subItemList[i * 3 + 0].findAll('td')
-
-                    # td 1
-                    sellingType = subItem[0].findAll("a", {"class": "link_txt"})[0].string
-                    sellingDate = subItem[0].findAll("em", {"class": "txt_date"})[0].string
-
-                    # td 2
-                    estateType = subItem[1].findAll("a", {"class": "link_txt"})[0].string
-                    c3Name = subItem[1].findAll("a", {"class": "link_txt"})[1].string
-
-                    # td 3
-                    estateNameKR = subItem[2].findAll("a", {"class": "link_apt"})[0].string
-
-                    # td 4
-                    areaValue = subItem[3].findAll("span", {"class": "txt_size"})
-                    supplyArea = areaValue[0].string
-                    netArea = areaValue[1].string
-                    declareArea = subItem[3].findAll("a", {"class": "link_txt"})[0].string
-                    declareTypeArea = declareArea.split('/')[0]
-
-                    # td 5
-                    sellingPrice = subItem[4].findAll("a", {"class": "link_txt"})[0].string
-
-                    # td 6
-                    estateComplex = subItem[5].findAll("a", {"class": "link_txt"})[0].string
-
-                    # td 7
-                    estateFloor = subItem[6].text.replace('\n', '').strip().split('/')[0]
-                    estateTotalFloor = subItem[6].findAll("span", {"class": "txt_num"})[0].string
-
-                    # td 8
-                    contactLink = subItem[7].find("a")['href']
-                    contactNumber = subItem[7].findAll("a")[1].text
-
-                    subItem = subItemList[i * 3 + 1].findAll('td')
-                    # td 1
-                    estateDescList_text = subItem[0].find('span', {"class": "box_desc"})
-                    estateDescList = estateDescList_text.findAll("span")
-                    ## TBD
-
-                    print title_theme[1].text, estateNameKR, sellingDate, sellingType, sellingPrice
-            if idx == 3:
-                subItemList = listItem.find('tbody').findAll('tr')
-                nSubItem = len(subItemList) / 3
-                for i in xrange(nSubItem):
-                    subItem = subItemList[i * 3 + 0].findAll('td')
-
-                    # td 1
-                    sellingType = subItem[0].findAll("a", {"class": "link_txt"})[0].string
-                    sellingDate = subItem[0].findAll("em", {"class": "txt_date"})[0].string
-
-                    # td 2
-                    estateType = subItem[1].findAll("a", {"class": "link_txt"})[0].string
-                    c3Name = subItem[1].findAll("a", {"class": "link_txt"})[1].string
-
-                    # td 3
-                    estateNameKR = subItem[2].findAll("a", {"class": "link_apt"})[0].string
-
-                    # td 4
-                    areaValue = subItem[3].findAll("span", {"class": "txt_size"})
-                    supplyArea = areaValue[0].string
-                    netArea = areaValue[1].string
-                    declareArea = subItem[3].findAll("a", {"class": "link_txt"})[0].string
-                    declareTypeArea = declareArea.split('/')[0]
-
-                    # td 5
-                    sellingPrice = subItem[4].findAll("a", {"class": "link_txt"})[0].string
-
-                    # td 6
-                    estateComplex = subItem[5].findAll("a", {"class": "link_txt"})[0].string
-
-                    # td 7
-                    estateFloor = subItem[6].text.replace('\n', '').strip().split('/')[0]
-                    estateTotalFloor = subItem[6].findAll("span", {"class": "txt_num"})[0].string
-
-                    # td 8
-                    contactLink = subItem[7].find("a")['href']
-                    contactNumber = subItem[7].findAll("a")[1].text
-
-                    subItem = subItemList[i * 3 + 1].findAll('td')
-                    # td 1
-                    estateDescList_text = subItem[0].find('span', {"class": "box_desc"})
-                    estateDescList = estateDescList_text.findAll("span")
-                    ## TBD
-
-                    print title_theme[1].text, estateNameKR, sellingDate, sellingType, sellingPrice
-            if idx == 5:
-                subItemList = listItem.find('tbody').findAll('tr')
-                nSubItem = len(subItemList) / 3
-                for i in xrange(nSubItem):
-                    subItem = subItemList[i * 3 + 0].findAll('td')
-
-                    # td 1
-                    sellingType = subItem[0].findAll("a", {"class": "link_txt"})[0].string
-                    sellingDate = subItem[0].findAll("em", {"class": "txt_date"})[0].string
-
-                    # td 2
-                    estateType = subItem[1].findAll("a", {"class": "link_txt"})[0].string
-                    c3Name = subItem[1].findAll("a", {"class": "link_txt"})[1].string
-
-                    # td 3
-                    estateNameKR = subItem[2].findAll("a", {"class": "link_apt"})[0].string
-
-                    # td 4
-                    areaValue = subItem[3].findAll("span", {"class": "txt_size"})
-                    supplyArea = areaValue[0].string
-                    netArea = areaValue[1].string
-                    declareArea = subItem[3].findAll("a", {"class": "link_txt"})[0].string
-                    declareTypeArea = declareArea.split('/')[0]
-
-                    # td 5
-                    sellingPrice = subItem[4].findAll("a", {"class": "link_txt"})[0].string
-
-                    # td 6
-                    estateComplex = subItem[5].findAll("a", {"class": "link_txt"})[0].string
-
-                    # td 7
-                    estateFloor = subItem[6].text.replace('\n', '').strip().split('/')[0]
-                    estateTotalFloor = subItem[6].findAll("span", {"class": "txt_num"})[0].string
-
-                    # td 8
-                    contactLink = subItem[7].find("a")['href']
-                    contactNumber = subItem[7].findAll("a")[1].text
-
-                    subItem = subItemList[i * 3 + 1].findAll('td')
-                    # td 1
-                    estateDescList_text = subItem[0].find('span', {"class": "box_desc"})
-                    estateDescList = estateDescList_text.findAll("span")
-                    ## TBD
-
-                    print title_theme[2].text, estateNameKR, sellingDate, sellingType, sellingPrice
 
 
 flag = 1
@@ -787,7 +601,11 @@ else:
     c3Code = IO.staticLoadJSON('2016-01-25-c3Code.json')
     # c4Code = IO.staticLoadJSON('2016-01-18-c4Code.json')
 
-c4List = getc4ListParsing(open('case2.html', 'r'))
+driver = webdriver.PhantomJS(executable_path='C:\\Users\\User\\Downloads\\phantomjs-2.0.0-windows\\phantomjs-2.0.0-windows\\bin\\phantomjs.exe')
+url = 'http://realestate.daum.net/iframe/maemul/DanjiMaemulList.daum?mcateCode=A1A3A4&saleTypeCode=*&tabName=maemullist&fullload=Y&isSection=Y&danjiId=4753'
+driver.get(url)
+
+c4List = getc4ListParsing(driver.page_source, driver)
 
 if debug == 0:
     for aa in c2Code:
