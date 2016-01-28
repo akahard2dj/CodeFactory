@@ -228,7 +228,7 @@ def getc3Parsing(text):
     return item_list
 
 
-def getc4Code(c3Code, realEstateCode):
+def getc4Code(c3Code, realEstateCode, driver):
     url_list = []
     for subItem in c3Code:
         url1 = 'http://realestate.daum.net/maemul/area/'
@@ -242,8 +242,8 @@ def getc4Code(c3Code, realEstateCode):
     for idx, url in enumerate(url_list[0:1]):
         print url
         # r = requests.get(url)
-        driver = webdriver.PhantomJS(
-            executable_path='C:\\Users\\User\\Downloads\\phantomjs-2.0.0-windows\\phantomjs-2.0.0-windows\\bin\\phantomjs.exe')
+        #driver = webdriver.PhantomJS(
+        #    executable_path='C:\\Users\\User\\Downloads\\phantomjs-2.0.0-windows\\phantomjs-2.0.0-windows\\bin\\phantomjs.exe')
         driver.get(url)
 
         subc4List = getc4Parsing(driver.page_source)
@@ -289,8 +289,25 @@ def getc4Parsing(text):
 
     return item_list
 
+def getc4List(c4Code, realEstateCode, driver):
+    url_list = []
+    for subItem in c4Code:
+        nTotalSales = int(subItem['c4TradeCounts']) + int(subItem['c4LeaseCounts']) + int(subItem['c4RentCounts'])
+        if nTotalSales:
+            url1 = 'http://realestate.daum.net/iframe/maemul/DanjiMaemulList.daum?mcateCode='
+            realEstateCode = realEstateCode
+            url2 = '&saleTypeCode=*&isSection=Y&fullload=Y&tabName=maemullist&danjiId='
+            c4code = subItem['c4Code']
+            url = url1 + realEstateCode + url2 + c4code
+            url_list.append(url)
 
-def getc4List(c4Code, realEstateCode):
+    for idx, url in enumerate(url_list):
+        driver.get(url)
+        print url
+        getc4ListParsing(url, driver.page_source, driver)
+
+
+def getc4List2(c4Code, realEstateCode, driver):
     url_list = []
     for subItem in c4Code:
         url1 = 'http://realestate.daum.net/iframe/maemul/DanjiMaemulList.daum?mcateCode='
@@ -302,8 +319,8 @@ def getc4List(c4Code, realEstateCode):
         url_list.append(url)
 
     c4List = []
-    driver = webdriver.PhantomJS(
-        executable_path='C:\\Users\\User\\Downloads\\phantomjs-2.0.0-windows\\phantomjs-2.0.0-windows\\bin\\phantomjs.exe')
+   # driver = webdriver.PhantomJS(
+   #     executable_path='C:\\Users\\User\\Downloads\\phantomjs-2.0.0-windows\\phantomjs-2.0.0-windows\\bin\\phantomjs.exe')
     for idx, url in enumerate(url_list[0:1]):
         driver.get(url)
         # loading web address of maemul/sise/danji/photo/danjiSize/Tax/New/Comm
@@ -352,7 +369,7 @@ def isValidSales(text):
         return False
 
 
-def getc4ListParsing(text, driver):
+def getc4ListParsing(url, text, driver):
     item_list = []
     soup = bs4.BeautifulSoup(text, "html.parser")
     box_info_tbl_top = soup.find('div', {"class": "box_info_tbl_top"})
@@ -364,10 +381,10 @@ def getc4ListParsing(text, driver):
                 getc4ListParsingThemeMaemul(listItem, title_theme.text, driver)
 
             if title_theme.text == '추천매물'.decode('utf-8'):
-                getc4ListParsingRecommMaemul(listItem, title_theme.text)
+                getc4ListParsingRecommMaemul(url, listItem, title_theme.text)
 
             if title_theme.text == '일반매물'.decode('utf-8'):
-                getc4ListParsingGeneralMaemul(listItem, title_theme.text)
+                getc4ListParsingGeneralMaemul(url, listItem, title_theme.text)
 
             if title_theme.text == '한국공인중개사협회매물'.decode('utf-8'):
                 getc4ListParsingAgencyMaemul(listItem, title_theme.text)
@@ -380,7 +397,10 @@ def getc4ListParsing3Indexing(bs4List, titleName):
 
         # td 1
         sellingType = subItem[0].findAll("a", {"class": "link_txt"})[0].string
-        sellingDate = subItem[0].findAll("em", {"class": "txt_date"})[0].string
+        try:
+            sellingDate = subItem[0].findAll("em", {"class": "txt_date"})[0].string
+        except IndexError:
+            sellingDate = subItem[0].findAll("a")[1].string
 
         # td 2
         estateType = subItem[1].findAll("a", {"class": "link_txt"})[0].string
@@ -407,8 +427,19 @@ def getc4ListParsing3Indexing(bs4List, titleName):
         estateTotalFloor = subItem[6].findAll("span", {"class": "txt_num"})[0].string
 
         # td 8
-        contactLink = subItem[7].find("a")['href']
-        contactNumber = subItem[7].findAll("a")[1].text
+        # to be needed refining a parsing tech.
+        #try:
+        #    contactLink = subItem[7].find("a")['href']
+        #    contactNumber = subItem[7].findAll("a")[1].text
+        #except TypeError:
+        #    contactLink = 'none'
+        #    contactNumber = subItem[7].find("span", {"class": "link_txt"}).text
+
+        #try:
+        #    contactNumber = subItem[7].findAll("a")[1].text
+        #except IndexError:
+        #    contactNumber = subItem[7].find("span", {"class": "link_txt"}).text
+
 
         subItem = subItemList[i * 3 + 1].findAll('td')
         # td 1
@@ -416,7 +447,7 @@ def getc4ListParsing3Indexing(bs4List, titleName):
         estateDescList = estateDescList_text.findAll("span")
         ## TBD
 
-        print titleName, estateNameKR, sellingDate, sellingType, sellingPrice
+        print titleName, estateNameKR, sellingDate, sellingType, sellingPrice, i
 
 def getc4ListParsingThemeMaemul(bs4List, titleName, driver):
     detailbtn = bs4List.find('div', {"class": "box_detailbtn"})
@@ -425,149 +456,61 @@ def getc4ListParsingThemeMaemul(bs4List, titleName, driver):
         getc4ListParsing3Indexing(bs4List, titleName)
 
     else:
-        detailUrl = 'http://realestate.daum.net/' + detailbtn.find("a")['href']
-        driver.get(detailUrl)
-        soup = bs4.BeautifulSoup(driver.page_source, "html.parser")
-        print detailUrl
-    '''
-    subItemList = bs4List.find('tbody').findAll('tr')
-    nSubItem = len(subItemList) / 3
-    for i in xrange(nSubItem):
-        subItem = subItemList[i * 3 + 0].findAll('td')
+        detailUrl = 'http://realestate.daum.net' + detailbtn.find("a")['href']
 
-        # td 1
-        sellingType = subItem[0].findAll("a", {"class": "link_txt"})[0].string
-        sellingDate = subItem[0].findAll("em", {"class": "txt_date"})[0].string
+        pageIdx = 1
+        validFlag = True
 
-        # td 2
-        estateType = subItem[1].findAll("a", {"class": "link_txt"})[0].string
-        c3Name = subItem[1].findAll("a", {"class": "link_txt"})[1].string
+        while (validFlag == True):
+            pageUrl = detailUrl + '&page=' + str(pageIdx)
+            driver.get(pageUrl)
+            validFlag = isValidSales(driver.page_source)
+            if validFlag == True:
+                print validFlag, pageUrl
+                soup = bs4.BeautifulSoup(driver.page_source, "html.parser")
+                box_info_tbl_top = soup.find('div', {"class": "box_info_tbl_top"})
+                getc4ListParsing3Indexing(box_info_tbl_top, titleName)
+                pageIdx += 1
 
-        # td 3
-        estateNameKR = subItem[2].findAll("a", {"class": "link_apt"})[0].string
+def getc4ListParsingGeneralMaemul(url, bs4List, titleName):
+    getc4ListParsing3Indexing(bs4List, titleName)
 
-        # td 4
-        areaValue = subItem[3].findAll("span", {"class": "txt_size"})
-        supplyArea = areaValue[0].string
-        netArea = areaValue[1].string
-        declareArea = subItem[3].findAll("a", {"class": "link_txt"})[0].string
-        declareTypeArea = declareArea.split('/')[0]
+    pageWrap = bs4List.find('div', {"id": "pageWrap"})
 
-        # td 5
-        sellingPrice = subItem[4].findAll("a", {"class": "link_txt"})[0].string
+    if pageWrap:
+        pageIdx = 2
+        validFlag = True
 
-        # td 6
-        estateComplex = subItem[5].findAll("a", {"class": "link_txt"})[0].string
+        while (validFlag == True):
+            pageUrl = url + '&page=' + str(pageIdx)
+            driver.get(pageUrl)
+            validFlag = isValidSales(driver.page_source)
+            if validFlag == True:
+                print validFlag, pageUrl
+                soup = bs4.BeautifulSoup(driver.page_source, "html.parser")
+                box_info_tbl_top = soup.find('div', {"class": "box_info_tbl_top"})
+                getc4ListParsing3Indexing(box_info_tbl_top, titleName)
+                pageIdx += 1
 
-        # td 7
-        estateFloor = subItem[6].text.replace('\n', '').strip().split('/')[0]
-        estateTotalFloor = subItem[6].findAll("span", {"class": "txt_num"})[0].string
+def getc4ListParsingRecommMaemul(url, bs4List, titleName):
+    getc4ListParsing3Indexing(bs4List, titleName)
 
-        # td 8
-        contactLink = subItem[7].find("a")['href']
-        contactNumber = subItem[7].findAll("a")[1].text
+    pageWrap = bs4List.find('div', {"id": "pageWrap"})
 
-        subItem = subItemList[i * 3 + 1].findAll('td')
-        # td 1
-        estateDescList_text = subItem[0].find('span', {"class": "box_desc"})
-        estateDescList = estateDescList_text.findAll("span")
-        ## TBD
+    if pageWrap:
+        pageIdx = 2
+        validFlag = True
 
-        print titleName, estateNameKR, sellingDate, sellingType, sellingPrice
-    '''
-
-def getc4ListParsingGeneralMaemul(bs4List, titleName):
-    subItemList = bs4List.find('tbody').findAll('tr')
-    nSubItem = len(subItemList) / 3
-    for i in xrange(nSubItem):
-        subItem = subItemList[i * 3 + 0].findAll('td')
-
-        # td 1
-        sellingType = subItem[0].findAll("a", {"class": "link_txt"})[0].string
-        sellingDate = subItem[0].findAll("em", {"class": "txt_date"})[0].string
-
-        # td 2
-        estateType = subItem[1].findAll("a", {"class": "link_txt"})[0].string
-        c3Name = subItem[1].findAll("a", {"class": "link_txt"})[1].string
-
-        # td 3
-        estateNameKR = subItem[2].findAll("a", {"class": "link_apt"})[0].string
-
-        # td 4
-        areaValue = subItem[3].findAll("span", {"class": "txt_size"})
-        supplyArea = areaValue[0].string
-        netArea = areaValue[1].string
-        declareArea = subItem[3].findAll("a", {"class": "link_txt"})[0].string
-        declareTypeArea = declareArea.split('/')[0]
-
-        # td 5
-        sellingPrice = subItem[4].findAll("a", {"class": "link_txt"})[0].string
-
-        # td 6
-        estateComplex = subItem[5].findAll("a", {"class": "link_txt"})[0].string
-
-        # td 7
-        estateFloor = subItem[6].text.replace('\n', '').strip().split('/')[0]
-        estateTotalFloor = subItem[6].findAll("span", {"class": "txt_num"})[0].string
-
-        # td 8
-        contactLink = subItem[7].find("a")['href']
-        contactNumber = subItem[7].findAll("a")[1].text
-
-        subItem = subItemList[i * 3 + 1].findAll('td')
-        # td 1
-        estateDescList_text = subItem[0].find('span', {"class": "box_desc"})
-        estateDescList = estateDescList_text.findAll("span")
-        ## TBD
-
-        print titleName, estateNameKR, sellingDate, sellingType, sellingPrice
-
-
-def getc4ListParsingRecommMaemul(bs4List, titleName):
-    subItemList = bs4List.find('tbody').findAll('tr')
-    nSubItem = len(subItemList) / 3
-    for i in xrange(nSubItem):
-        subItem = subItemList[i * 3 + 0].findAll('td')
-
-        # td 1
-        sellingType = subItem[0].findAll("a", {"class": "link_txt"})[0].string
-        sellingDate = subItem[0].findAll("em", {"class": "txt_date"})[0].string
-
-        # td 2
-        estateType = subItem[1].findAll("a", {"class": "link_txt"})[0].string
-        c3Name = subItem[1].findAll("a", {"class": "link_txt"})[1].string
-
-        # td 3
-        estateNameKR = subItem[2].findAll("a", {"class": "link_apt"})[0].string
-
-        # td 4
-        areaValue = subItem[3].findAll("span", {"class": "txt_size"})
-        supplyArea = areaValue[0].string
-        netArea = areaValue[1].string
-        declareArea = subItem[3].findAll("a", {"class": "link_txt"})[0].string
-        declareTypeArea = declareArea.split('/')[0]
-
-        # td 5
-        sellingPrice = subItem[4].findAll("a", {"class": "link_txt"})[0].string
-
-        # td 6
-        estateComplex = subItem[5].findAll("a", {"class": "link_txt"})[0].string
-
-        # td 7
-        estateFloor = subItem[6].text.replace('\n', '').strip().split('/')[0]
-        estateTotalFloor = subItem[6].findAll("span", {"class": "txt_num"})[0].string
-
-        # td 8
-        contactLink = subItem[7].find("a")['href']
-        contactNumber = subItem[7].findAll("a")[1].text
-
-        subItem = subItemList[i * 3 + 1].findAll('td')
-        # td 1
-        estateDescList_text = subItem[0].find('span', {"class": "box_desc"})
-        estateDescList = estateDescList_text.findAll("span")
-        ## TBD
-
-        print titleName, estateNameKR, sellingDate, sellingType, sellingPrice
+        while (validFlag == True):
+            pageUrl = url + '&page=' + str(pageIdx)
+            driver.get(pageUrl)
+            validFlag = isValidSales(driver.page_source)
+            if validFlag == True:
+                print validFlag, pageUrl
+                soup = bs4.BeautifulSoup(driver.page_source, "html.parser")
+                box_info_tbl_top = soup.find('div', {"class": "box_info_tbl_top"})
+                getc4ListParsing3Indexing(box_info_tbl_top, titleName)
+                pageIdx += 1
 
 def getc4ListParsingAgencyMaemul(bs4List, titleName):
     title_theme = bs4List.findAll('h3', {"class": "tit_theme"})
@@ -578,7 +521,7 @@ def getc4ListParsingAgencyMaemul(bs4List, titleName):
 
 
 flag = 1
-debug = 1
+debug =1
 
 if flag == 0:
     driver = webdriver.PhantomJS(
@@ -599,16 +542,20 @@ else:
     c1Code = IO.staticLoadJSON('2016-01-25-c1Code.json')
     c2Code = IO.staticLoadJSON('2016-01-25-c2Code.json')
     c3Code = IO.staticLoadJSON('2016-01-25-c3Code.json')
-    # c4Code = IO.staticLoadJSON('2016-01-18-c4Code.json')
+    c4Code = IO.staticLoadJSON('2016-01-28-c4Code.json')
 
 driver = webdriver.PhantomJS(executable_path='C:\\Users\\User\\Downloads\\phantomjs-2.0.0-windows\\phantomjs-2.0.0-windows\\bin\\phantomjs.exe')
-url = 'http://realestate.daum.net/iframe/maemul/DanjiMaemulList.daum?mcateCode=A1A3A4&saleTypeCode=*&tabName=maemullist&fullload=Y&isSection=Y&danjiId=4753'
-driver.get(url)
+#c4Code = getc4Code(c3Code[0:1], realEstate_code['APT'], driver)
+#IO.writeJSON('c4Code.json', c4Code)
+c4List = getc4List(c4Code, realEstate_code['APT'], driver)
 
+#driver = webdriver.PhantomJS(executable_path='C:\\Users\\User\\Downloads\\phantomjs-2.0.0-windows\\phantomjs-2.0.0-windows\\bin\\phantomjs.exe')
+#url = 'http://realestate.daum.net/iframe/maemul/DanjiMaemulList.daum?mcateCode=A1A3A4&saleTypeCode=*&tabName=maemullist&fullload=Y&isSection=Y&danjiId=4753'
+#driver.get(url)
 
-c4List = getc4ListParsing(driver.page_source, driver)
+#c4List = getc4ListParsing(driver.page_source, driver)
 
 if debug == 0:
-    for aa in c2Code:
+    for aa in c4Code:
         # print aa['c1Code'], aa['c2Code'],  aa['c3Code'], aa['c4Code'], aa['c1NameKR'], aa['c2NameKR'], aa['c3NameKR'], aa['c4NameKR'], aa['c4TradeCounts'], aa['c4LeaseCounts'], aa['c4RentCounts']
-        print aa['c1Code'], aa['c2Code'], aa['c1NameKR'], aa['c2NameKR']
+        print aa['c1Code'], aa['c2Code'], aa['c3Code'], aa['c4Code'], aa['c1NameKR'], aa['c2NameKR'], aa['c3NameKR'], aa['c4NameKR']
