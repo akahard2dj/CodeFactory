@@ -319,8 +319,6 @@ def getc4List2(c4Code, realEstateCode, driver):
         url_list.append(url)
 
     c4List = []
-   # driver = webdriver.PhantomJS(
-   #     executable_path='C:\\Users\\User\\Downloads\\phantomjs-2.0.0-windows\\phantomjs-2.0.0-windows\\bin\\phantomjs.exe')
     for idx, url in enumerate(url_list[0:1]):
         driver.get(url)
         # loading web address of maemul/sise/danji/photo/danjiSize/Tax/New/Comm
@@ -387,7 +385,7 @@ def getc4ListParsing(url, text, driver):
                 getc4ListParsingGeneralMaemul(url, listItem, title_theme.text)
 
             if title_theme.text == '한국공인중개사협회매물'.decode('utf-8'):
-                getc4ListParsingAgencyMaemul(listItem, title_theme.text)
+                getc4ListParsingAgencyMaemul(url, listItem, title_theme.text)
 
 def getc4ListParsing3Indexing(bs4List, titleName):
     subItemList = bs4List.find('tbody').findAll('tr')
@@ -418,6 +416,32 @@ def getc4ListParsing3Indexing(bs4List, titleName):
 
         # td 5
         sellingPrice = subItem[4].findAll("a", {"class": "link_txt"})[0].string
+        # sellingPriceChangeIndex
+        # 0 : unchagned
+        # 1 : increased
+        # -1 : decreased
+        sellingPriceChangeIndex = 0
+        sellingPriceBefore = sellingPrice
+        sellingPriceChange = 0
+        sellingPriceDate = sellingDate
+        sellingPriceDateChange = sellingDate
+        if sellingPrice is None:
+            flagNameKR = subItem[4].findAll("span", {"class": "screen_out"})[0].text
+            if flagNameKR == '매물가격 상승'.decode('utf-8'):
+                attrName = 'ico_price ico_up'
+                sellingPriceChangeIndex = 1
+            if flagNameKR == '매물가격 하락'.decode('utf-8'):
+                attrName = 'ico_price ico_down'
+                sellingPriceChangeIndex = -1
+
+            sellingPrice = subItem[4].findAll("span", {"class": attrName})[0].text.replace(flagNameKR, "").strip()
+
+            priceChangeTag = subItem[4].findAll("span", {"class": "box_txt"})
+
+            sellingPriceDateChange = priceChangeTag[1].text.split()[1]
+            sellingPriceBefore = priceChangeTag[1].text.split()[2].replace("가격".decode('utf-8'),"")
+            sellingPriceChange = subItem[4].findAll("span", {"class": "box_fluctuate"})[0].text.replace(flagNameKR, "").split()[1]
+
 
         # td 6
         estateComplex = subItem[5].findAll("a", {"class": "link_txt"})[0].string
@@ -450,27 +474,33 @@ def getc4ListParsing3Indexing(bs4List, titleName):
         print titleName, estateNameKR, sellingDate, sellingType, sellingPrice, i
 
 def getc4ListParsingThemeMaemul(bs4List, titleName, driver):
+
     detailbtn = bs4List.find('div', {"class": "box_detailbtn"})
+    title_theme = bs4List.find('h3', {"class": "tit_theme"})
 
-    if detailbtn is None:
-        getc4ListParsing3Indexing(bs4List, titleName)
+    if title_theme.text == '테마매물'.decode('utf-8'):
+        if detailbtn is None:
+            getc4ListParsing3Indexing(bs4List, titleName)
 
-    else:
-        detailUrl = 'http://realestate.daum.net' + detailbtn.find("a")['href']
+        else:
+            detailUrl = 'http://realestate.daum.net' + detailbtn.find("a")['href']
 
-        pageIdx = 1
-        validFlag = True
+            pageIdx = 1
+            validFlag = True
 
-        while (validFlag == True):
-            pageUrl = detailUrl + '&page=' + str(pageIdx)
-            driver.get(pageUrl)
-            validFlag = isValidSales(driver.page_source)
-            if validFlag == True:
-                print validFlag, pageUrl
-                soup = bs4.BeautifulSoup(driver.page_source, "html.parser")
-                box_info_tbl_top = soup.find('div', {"class": "box_info_tbl_top"})
-                getc4ListParsing3Indexing(box_info_tbl_top, titleName)
-                pageIdx += 1
+            while (validFlag == True):
+                pageUrl = detailUrl + '&page=' + str(pageIdx)
+                driver.get(pageUrl)
+                validFlag = isValidSales(driver.page_source)
+                if validFlag == True:
+                    print validFlag, pageUrl
+                    soup = bs4.BeautifulSoup(driver.page_source, "html.parser")
+                    box_info_tbl_top = soup.find('div', {"class": "box_info_tbl_top"})
+                    getc4ListParsing3Indexing(box_info_tbl_top, titleName)
+                    pageIdx += 1
+    if title_theme.text == '한국공인중개사협회매물'.decode('utf-8'):
+        getc4ListParsingAgencyMaemul(bs4List, title_theme.text)
+
 
 def getc4ListParsingGeneralMaemul(url, bs4List, titleName):
     getc4ListParsing3Indexing(bs4List, titleName)
@@ -489,7 +519,17 @@ def getc4ListParsingGeneralMaemul(url, bs4List, titleName):
                 print validFlag, pageUrl
                 soup = bs4.BeautifulSoup(driver.page_source, "html.parser")
                 box_info_tbl_top = soup.find('div', {"class": "box_info_tbl_top"})
-                getc4ListParsing3Indexing(box_info_tbl_top, titleName)
+                title_theme = box_info_tbl_top.findAll('h3', {"class": "tit_theme"})
+                box_info_tbl = box_info_tbl_top.findAll('div', {"class": "box_info_tbl"})
+
+                for i in xrange(len(title_theme)):
+                    tableTitleName = title_theme[i].text
+                    if tableTitleName == '추천매물'.decode('utf-8'):
+                        getc4ListParsing3Indexing(box_info_tbl[i], tableTitleName)
+                    if tableTitleName == '일반매물'.decode('utf-8'):
+                        getc4ListParsing3Indexing(box_info_tbl[i], tableTitleName)
+                    elif tableTitleName == '한국공인중개사협회매물'.decode('utf-8'):
+                        getc4ListParsing3Indexing(box_info_tbl[i], tableTitleName)
                 pageIdx += 1
 
 def getc4ListParsingRecommMaemul(url, bs4List, titleName):
@@ -509,15 +549,50 @@ def getc4ListParsingRecommMaemul(url, bs4List, titleName):
                 print validFlag, pageUrl
                 soup = bs4.BeautifulSoup(driver.page_source, "html.parser")
                 box_info_tbl_top = soup.find('div', {"class": "box_info_tbl_top"})
-                getc4ListParsing3Indexing(box_info_tbl_top, titleName)
+                title_theme = box_info_tbl_top.findAll('h3', {"class": "tit_theme"})
+                box_info_tbl = box_info_tbl_top.findAll('div', {"class": "box_info_tbl"})
+
+                for i in xrange(len(title_theme)):
+                    tableTitleName = title_theme[i].text
+                    if tableTitleName == '추천매물'.decode('utf-8'):
+                        getc4ListParsing3Indexing(box_info_tbl[i], tableTitleName)
+                    if tableTitleName == '일반매물'.decode('utf-8'):
+                        getc4ListParsing3Indexing(box_info_tbl[i], tableTitleName)
+                    elif tableTitleName == '한국공인중개사협회매물'.decode('utf-8'):
+                        getc4ListParsing3Indexing(box_info_tbl[i], tableTitleName)
                 pageIdx += 1
 
-def getc4ListParsingAgencyMaemul(bs4List, titleName):
-    title_theme = bs4List.findAll('h3', {"class": "tit_theme"})
-    print '*1111'
-    for ii in title_theme:
-        print ii.text
-    print '*#2424#'
+
+def getc4ListParsingAgencyMaemul(url, bs4List, titleName):
+    getc4ListParsing3Indexing(bs4List, titleName)
+
+    pageWrap = bs4List.find('div', {"id": "pageWrap"})
+
+    if pageWrap:
+            pageIdx = 2
+            validFlag = True
+
+            while (validFlag == True):
+                pageUrl = url + '&page=' + str(pageIdx)
+                driver.get(pageUrl)
+                validFlag = isValidSales(driver.page_source)
+                if validFlag == True:
+                    print validFlag, pageUrl
+                    soup = bs4.BeautifulSoup(driver.page_source, "html.parser")
+                    box_info_tbl_top = soup.find('div', {"class": "box_info_tbl_top"})
+                    title_theme = box_info_tbl_top.findAll('h3', {"class": "tit_theme"})
+                    box_info_tbl = box_info_tbl_top.findAll('div', {"class": "box_info_tbl"})
+
+                    for i in xrange(len(title_theme)):
+                        tableTitleName = title_theme[i].text
+                        if tableTitleName == '추천매물'.decode('utf-8'):
+                            getc4ListParsing3Indexing(box_info_tbl[i], tableTitleName)
+                        if tableTitleName == '일반매물'.decode('utf-8'):
+                            getc4ListParsing3Indexing(box_info_tbl[i], tableTitleName)
+                        elif tableTitleName == '한국공인중개사협회매물'.decode('utf-8'):
+                            getc4ListParsing3Indexing(box_info_tbl[i], tableTitleName)
+                    pageIdx += 1
+
 
 
 flag = 1
