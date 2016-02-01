@@ -6,6 +6,9 @@ from selenium.common.exceptions import TimeoutException
 import platform
 import IO
 import codecs
+import copy
+import sys
+sys.setrecursionlimit(10000)
 
 '''
 update....
@@ -160,7 +163,7 @@ def getc2Parsing(text):
     return item_list
 
 
-def getc3Code(c2List, realEstateCode):
+def getc3Code(c2List, realEstateCode, driver):
     url_list = []
     for subItem in c2List:
         url1 = 'http://realestate.daum.net/maemul/area/'
@@ -173,7 +176,7 @@ def getc3Code(c2List, realEstateCode):
     c3List = []
 
     pendingUrlList = []
-    # driver = webdriver.PhantomJS(executable_path='C:\\Users\\User\\Downloads\\phantomjs-2.0.0-windows\\phantomjs-2.0.0-windows\\bin\\phantomjs.exe')
+
     for idx, url in enumerate(url_list):
         nAttemps = 0
         successFlag = False
@@ -239,7 +242,7 @@ def getc4Code(c3Code, realEstateCode, driver):
         url_list.append(url)
 
     c4Code = []
-    for idx, url in enumerate(url_list[0:1]):
+    for idx, url in enumerate(url_list):
         print url
         # r = requests.get(url)
         #driver = webdriver.PhantomJS(
@@ -267,7 +270,6 @@ def getc4Code(c3Code, realEstateCode, driver):
 
     return c4Code
 
-
 def getc4Parsing(text):
     item_list = []
     soup = bs4.BeautifulSoup(text, "html.parser")
@@ -277,10 +279,13 @@ def getc4Parsing(text):
     for item in c4Items:
         items = {}
         items['code'] = item.find('a')['href'].split('/')[3].encode('ascii', 'ignore')
-        tmpStr = item.text
-        tmpStrList = tmpStr.split()
-        items['nameKR'] = tmpStrList[0]
-        tmpCounts = tmpStrList[1].split()[-1].replace("(", "").replace(")", "").encode('ascii', 'ignore').split('/')
+        #tmpStr = item.text
+        #tmpStrList = tmpStr.split()
+        #items['nameKR'] = tmpStrList[0]
+        items['nameKR'] = item.find('a')['title']
+        tmpCounts = item.find('em', {"class": "txt_num"}).text.split()[-1].replace("(", "").replace(")", "").encode('ascii', 'ignore').split('/')
+        #tmpCounts = tmpStrList[1].split()[-1].replace("(", "").replace(")", "").encode('ascii', 'ignore').split('/')
+        print '##', tmpCounts
         items['tradeCounts'] = tmpCounts[0]
         items['leaseCounts'] = tmpCounts[1]
         items['rentCounts'] = tmpCounts[2]
@@ -291,9 +296,11 @@ def getc4Parsing(text):
 
 def getc4List(c4Code, realEstateCode, driver):
     url_list = []
-    for subItem in c4Code:
+    index_list = []
+    for idx, subItem in enumerate(c4Code):
         nTotalSales = int(subItem['c4TradeCounts']) + int(subItem['c4LeaseCounts']) + int(subItem['c4RentCounts'])
         if nTotalSales:
+            index_list.append(idx)
             url1 = 'http://realestate.daum.net/iframe/maemul/DanjiMaemulList.daum?mcateCode='
             realEstateCode = realEstateCode
             url2 = '&saleTypeCode=*&isSection=Y&fullload=Y&tabName=maemullist&danjiId='
@@ -301,44 +308,49 @@ def getc4List(c4Code, realEstateCode, driver):
             url = url1 + realEstateCode + url2 + c4code
             url_list.append(url)
 
+    c4List = []
     for idx, url in enumerate(url_list):
+        subc4List = []
         driver.get(url)
         print url
-        getc4ListParsing(url, driver.page_source, driver)
+        getc4ListParsing(subc4List, url, driver.page_source, driver)
 
+        for item in subc4List:
+            subItem = {}
+            c4CodeIndex = index_list[idx]
+            subItem['c1Code'] = c4Code[c4CodeIndex]['c1Code']
+            subItem['c1NameKR'] = c4Code[c4CodeIndex]['c1NameKR']
+            subItem['c2Code'] = c4Code[c4CodeIndex]['c2Code']
+            subItem['c2NameKR'] = c4Code[c4CodeIndex]['c2NameKR']
+            subItem['c3Code'] = c4Code[c4CodeIndex]['c3Code']
+            subItem['c3NameKR'] = c4Code[c4CodeIndex]['c3NameKR']
+            subItem['c3Counts'] = c4Code[c4CodeIndex]['c3Counts']
+            subItem['c4Code'] = c4Code[c4CodeIndex]['c4Code']
+            subItem['c4NameKR'] = c4Code[c4CodeIndex]['c4NameKR']
+            subItem['c4TradeCounts'] = c4Code[c4CodeIndex]['c4TradeCounts']
+            subItem['c4LeaseCounts'] = c4Code[c4CodeIndex]['c4LeaseCounts']
+            subItem['c4RentCounts'] = c4Code[c4CodeIndex]['c4RentCounts']
+            subItem['c4MaemulType'] = item['c4MaemulType']
+            subItem['c4SellingType'] = item['c4SellingType']
+            subItem['c4SellingDate'] = item['c4SellingDate']
+            subItem['c4EstateNameKR'] =item['c4EstateNameKR']
+            subItem['c4SupplyArea'] = item['c4SupplyArea']
+            subItem['c4NetArea'] =item['c4NetArea']
+            subItem['c4DeclareArea'] =item['c4DeclareArea']
+            subItem['c4DeclareTypeArea'] =item['c4DeclareTypeArea']
+            subItem['c4SellingPrice'] = item['c4SellingPrice']
+            subItem['c4SellingPriceChangeIndex'] = item['c4SellingPriceChangeIndex']
+            subItem['c4SellingPriceBefore'] =item['c4SellingPriceBefore']
+            subItem['c4SellingPriceChange'] = item['c4SellingPriceChange']
+            subItem['c4SellingPriceChange'] =item['c4SellingPriceChange']
+            subItem['c4SellingPriceChange'] = item['c4SellingPriceChange']
+            subItem['c4SellingPriceChange'] =item['c4SellingPriceChange']
+            subItem['c4SellingPriceChange'] =item['c4SellingPriceChange']
+            subItem['c4EstateTotalFloor'] =item['c4EstateTotalFloor']
 
-def getc4List2(c4Code, realEstateCode, driver):
-    url_list = []
-    for subItem in c4Code:
-        url1 = 'http://realestate.daum.net/iframe/maemul/DanjiMaemulList.daum?mcateCode='
-        realEstateCode = realEstateCode
-        url2 = '&saleTypeCode=*&isSection=Y&fullload=Y&tabName=maemullist&danjiId='
-        c4code = subItem['c4Code']
+            c4List.append(subItem)
 
-        url = url1 + realEstateCode + url2 + c4code
-        url_list.append(url)
-
-    c4List = []
-    for idx, url in enumerate(url_list[0:1]):
-        driver.get(url)
-        # loading web address of maemul/sise/danji/photo/danjiSize/Tax/New/Comm
-        item_tablist = getc4ListTabAdd(driver.page_source)
-
-        totalCounts = int(c4Code[idx]['c4TradeCounts']) + int(c4Code[idx]['c4LeaseCounts']) + int(
-                c4Code[idx]['c4RentCounts'])
-
-        if totalCounts:
-            pageIdx = 1
-            validFlag = True
-
-            while (validFlag == True):
-                pageUrl = url + '&page=' + str(pageIdx)
-                driver.get(pageUrl)
-                validFlag = isValidSales(driver.page_source)
-                if validFlag == True:
-                    subc4list = getc4ListParsing(driver.page_source)
-                    pageIdx += 1
-
+    return c4List
 
 def getc4ListTabAdd(text):
     soup = bs4.BeautifulSoup(text, "html.parser")
@@ -367,7 +379,7 @@ def isValidSales(text):
         return False
 
 
-def getc4ListParsing(url, text, driver):
+def getc4ListParsing(c4List, url, text, driver):
     item_list = []
     soup = bs4.BeautifulSoup(text, "html.parser")
     box_info_tbl_top = soup.find('div', {"class": "box_info_tbl_top"})
@@ -376,21 +388,24 @@ def getc4ListParsing(url, text, driver):
         if idx % 2 == 1:
             title_theme = listItem.find('h3', {"class": "tit_theme"})
             if title_theme.text == '테마매물'.decode('utf-8'):
-                getc4ListParsingThemeMaemul(listItem, title_theme.text, driver)
+                getc4ListParsingThemeMaemul(c4List, listItem, title_theme.text, driver)
 
             if title_theme.text == '추천매물'.decode('utf-8'):
-                getc4ListParsingRecommMaemul(url, listItem, title_theme.text)
+                getc4ListParsingRecommMaemul(c4List, url, listItem, title_theme.text)
 
             if title_theme.text == '일반매물'.decode('utf-8'):
-                getc4ListParsingGeneralMaemul(url, listItem, title_theme.text)
+                getc4ListParsingGeneralMaemul(c4List, url, listItem, title_theme.text)
 
             if title_theme.text == '한국공인중개사협회매물'.decode('utf-8'):
-                getc4ListParsingAgencyMaemul(url, listItem, title_theme.text)
+                getc4ListParsingAgencyMaemul(c4List, url, listItem, title_theme.text)
 
-def getc4ListParsing3Indexing(bs4List, titleName):
+def getc4ListParsing3Indexing(c4List, bs4List, titleName):
+    item_list = []
     subItemList = bs4List.find('tbody').findAll('tr')
     nSubItem = len(subItemList) / 3
     for i in xrange(nSubItem):
+        items['c4MaemulType'] = titleName
+        items = {}
         subItem = subItemList[i * 3 + 0].findAll('td')
 
         # td 1
@@ -400,6 +415,9 @@ def getc4ListParsing3Indexing(bs4List, titleName):
         except IndexError:
             sellingDate = subItem[0].findAll("a")[1].string
 
+        items['c4SellingType'] = sellingType
+        items['c4SellingDate'] = sellingDate
+
         # td 2
         estateType = subItem[1].findAll("a", {"class": "link_txt"})[0].string
         c3Name = subItem[1].findAll("a", {"class": "link_txt"})[1].string
@@ -407,12 +425,19 @@ def getc4ListParsing3Indexing(bs4List, titleName):
         # td 3
         estateNameKR = subItem[2].findAll("a", {"class": "link_apt"})[0].string
 
+        items['c4EstateNameKR'] = estateNameKR
+
         # td 4
         areaValue = subItem[3].findAll("span", {"class": "txt_size"})
         supplyArea = areaValue[0].string
         netArea = areaValue[1].string
         declareArea = subItem[3].findAll("a", {"class": "link_txt"})[0].string
         declareTypeArea = declareArea.split('/')[0]
+
+        items['c4SupplyArea'] = supplyArea
+        items['c4NetArea'] = netArea
+        items['c4DeclareArea'] = declareArea
+        items['c4DeclareTypeArea'] = declareTypeArea
 
         # td 5
         sellingPrice = subItem[4].findAll("a", {"class": "link_txt"})[0].string
@@ -442,13 +467,24 @@ def getc4ListParsing3Indexing(bs4List, titleName):
             sellingPriceBefore = priceChangeTag[1].text.split()[2].replace("가격".decode('utf-8'),"")
             sellingPriceChange = subItem[4].findAll("span", {"class": "box_fluctuate"})[0].text.replace(flagNameKR, "").split()[1]
 
+        items['c4SellingPrice'] = sellingPrice
+        items['c4SellingPriceChangeIndex'] = sellingPriceChangeIndex
+        items['c4SellingPriceBefore'] = sellingPriceBefore
+        items['c4SellingPriceChange'] = sellingPriceChange
+        items['c4SellingPriceDate'] = sellingPriceDateChange
+        items['c4SeelingPriceDateChange'] = sellingPriceDateChange
 
         # td 6
         estateComplex = subItem[5].findAll("a", {"class": "link_txt"})[0].string
 
+        items['c4EstateComplex'] = estateComplex
+
         # td 7
         estateFloor = subItem[6].text.replace('\n', '').strip().split('/')[0]
         estateTotalFloor = subItem[6].findAll("span", {"class": "txt_num"})[0].string
+
+        items['c4EstateFloor'] = estateFloor
+        items['c4EstateTotalFloor'] = estateTotalFloor
 
         # td 8
         # to be needed refining a parsing tech.
@@ -472,15 +508,19 @@ def getc4ListParsing3Indexing(bs4List, titleName):
         ## TBD
 
         print titleName, estateNameKR, sellingDate, sellingType, sellingPrice, i
+        #c4List.append(copy.deepcopy(items))
+        c4List.append(items)
+        #item_list.append(items)
+    #c4List.append(copy.deepcopy(item_list))
 
-def getc4ListParsingThemeMaemul(bs4List, titleName, driver):
+def getc4ListParsingThemeMaemul(c4List, bs4List, titleName, driver):
 
     detailbtn = bs4List.find('div', {"class": "box_detailbtn"})
     title_theme = bs4List.find('h3', {"class": "tit_theme"})
 
     if title_theme.text == '테마매물'.decode('utf-8'):
         if detailbtn is None:
-            getc4ListParsing3Indexing(bs4List, titleName)
+            getc4ListParsing3Indexing(c4List, bs4List, titleName)
 
         else:
             detailUrl = 'http://realestate.daum.net' + detailbtn.find("a")['href']
@@ -496,44 +536,14 @@ def getc4ListParsingThemeMaemul(bs4List, titleName, driver):
                     print validFlag, pageUrl
                     soup = bs4.BeautifulSoup(driver.page_source, "html.parser")
                     box_info_tbl_top = soup.find('div', {"class": "box_info_tbl_top"})
-                    getc4ListParsing3Indexing(box_info_tbl_top, titleName)
+                    getc4ListParsing3Indexing(c4List, box_info_tbl_top, titleName)
                     pageIdx += 1
     if title_theme.text == '한국공인중개사협회매물'.decode('utf-8'):
-        getc4ListParsingAgencyMaemul(bs4List, title_theme.text)
+        getc4ListParsingAgencyMaemul(c4List, bs4List, title_theme.text)
 
 
-def getc4ListParsingGeneralMaemul(url, bs4List, titleName):
-    getc4ListParsing3Indexing(bs4List, titleName)
-
-    pageWrap = bs4List.find('div', {"id": "pageWrap"})
-
-    if pageWrap:
-        pageIdx = 2
-        validFlag = True
-
-        while (validFlag == True):
-            pageUrl = url + '&page=' + str(pageIdx)
-            driver.get(pageUrl)
-            validFlag = isValidSales(driver.page_source)
-            if validFlag == True:
-                print validFlag, pageUrl
-                soup = bs4.BeautifulSoup(driver.page_source, "html.parser")
-                box_info_tbl_top = soup.find('div', {"class": "box_info_tbl_top"})
-                title_theme = box_info_tbl_top.findAll('h3', {"class": "tit_theme"})
-                box_info_tbl = box_info_tbl_top.findAll('div', {"class": "box_info_tbl"})
-
-                for i in xrange(len(title_theme)):
-                    tableTitleName = title_theme[i].text
-                    if tableTitleName == '추천매물'.decode('utf-8'):
-                        getc4ListParsing3Indexing(box_info_tbl[i], tableTitleName)
-                    if tableTitleName == '일반매물'.decode('utf-8'):
-                        getc4ListParsing3Indexing(box_info_tbl[i], tableTitleName)
-                    elif tableTitleName == '한국공인중개사협회매물'.decode('utf-8'):
-                        getc4ListParsing3Indexing(box_info_tbl[i], tableTitleName)
-                pageIdx += 1
-
-def getc4ListParsingRecommMaemul(url, bs4List, titleName):
-    getc4ListParsing3Indexing(bs4List, titleName)
+def getc4ListParsingGeneralMaemul(c4List, url, bs4List, titleName):
+    getc4ListParsing3Indexing(c4List, bs4List, titleName)
 
     pageWrap = bs4List.find('div', {"id": "pageWrap"})
 
@@ -555,16 +565,46 @@ def getc4ListParsingRecommMaemul(url, bs4List, titleName):
                 for i in xrange(len(title_theme)):
                     tableTitleName = title_theme[i].text
                     if tableTitleName == '추천매물'.decode('utf-8'):
-                        getc4ListParsing3Indexing(box_info_tbl[i], tableTitleName)
+                        getc4ListParsing3Indexing(c4List, box_info_tbl[i], tableTitleName)
                     if tableTitleName == '일반매물'.decode('utf-8'):
-                        getc4ListParsing3Indexing(box_info_tbl[i], tableTitleName)
+                        getc4ListParsing3Indexing(c4List, box_info_tbl[i], tableTitleName)
                     elif tableTitleName == '한국공인중개사협회매물'.decode('utf-8'):
-                        getc4ListParsing3Indexing(box_info_tbl[i], tableTitleName)
+                        getc4ListParsing3Indexing(c4List, box_info_tbl[i], tableTitleName)
+                pageIdx += 1
+
+def getc4ListParsingRecommMaemul(c4List, url, bs4List, titleName):
+    getc4ListParsing3Indexing(c4List, bs4List, titleName)
+
+    pageWrap = bs4List.find('div', {"id": "pageWrap"})
+
+    if pageWrap:
+        pageIdx = 2
+        validFlag = True
+
+        while (validFlag == True):
+            pageUrl = url + '&page=' + str(pageIdx)
+            driver.get(pageUrl)
+            validFlag = isValidSales(driver.page_source)
+            if validFlag == True:
+                print validFlag, pageUrl
+                soup = bs4.BeautifulSoup(driver.page_source, "html.parser")
+                box_info_tbl_top = soup.find('div', {"class": "box_info_tbl_top"})
+                title_theme = box_info_tbl_top.findAll('h3', {"class": "tit_theme"})
+                box_info_tbl = box_info_tbl_top.findAll('div', {"class": "box_info_tbl"})
+
+                for i in xrange(len(title_theme)):
+                    tableTitleName = title_theme[i].text
+                    if tableTitleName == '추천매물'.decode('utf-8'):
+                        getc4ListParsing3Indexing(c4List, box_info_tbl[i], tableTitleName)
+                    if tableTitleName == '일반매물'.decode('utf-8'):
+                        getc4ListParsing3Indexing(c4List, box_info_tbl[i], tableTitleName)
+                    elif tableTitleName == '한국공인중개사협회매물'.decode('utf-8'):
+                        getc4ListParsing3Indexing(c4List, box_info_tbl[i], tableTitleName)
                 pageIdx += 1
 
 
-def getc4ListParsingAgencyMaemul(url, bs4List, titleName):
-    getc4ListParsing3Indexing(bs4List, titleName)
+def getc4ListParsingAgencyMaemul(c4List, url, bs4List, titleName):
+    getc4ListParsing3Indexing(c4List, bs4List, titleName)
 
     pageWrap = bs4List.find('div', {"id": "pageWrap"})
 
@@ -586,32 +626,42 @@ def getc4ListParsingAgencyMaemul(url, bs4List, titleName):
                     for i in xrange(len(title_theme)):
                         tableTitleName = title_theme[i].text
                         if tableTitleName == '추천매물'.decode('utf-8'):
-                            getc4ListParsing3Indexing(box_info_tbl[i], tableTitleName)
+                            getc4ListParsing3Indexing(c4List, box_info_tbl[i], tableTitleName)
                         if tableTitleName == '일반매물'.decode('utf-8'):
-                            getc4ListParsing3Indexing(box_info_tbl[i], tableTitleName)
+                            getc4ListParsing3Indexing(c4List, box_info_tbl[i], tableTitleName)
                         elif tableTitleName == '한국공인중개사협회매물'.decode('utf-8'):
-                            getc4ListParsing3Indexing(box_info_tbl[i], tableTitleName)
+                            getc4ListParsing3Indexing(c4List, box_info_tbl[i], tableTitleName)
                     pageIdx += 1
 
 
 
-flag = 1
+flag = 0
 debug =1
 
 if flag == 0:
     driver = webdriver.PhantomJS(
         executable_path='C:\\Users\\User\\Downloads\\phantomjs-2.0.0-windows\\phantomjs-2.0.0-windows\\bin\\phantomjs.exe')
-    c1Code = getc1Code(realEstate_code['APT'], driver)
-    IO.writeJSON('c1Code.json', c1Code)
+    #c1Code = getc1Code(realEstate_code['APT'], driver)
+    #IO.writeJSON('c1Code.json', c1Code)
 
-    c2Code = getc2Code(c1Code, realEstate_code['APT'], driver)
-    IO.writeJSON('c2Code.json', c2Code)
+    #c2Code = getc2Code(c1Code, realEstate_code['APT'], driver)
+    #IO.writeJSON('c2Code.json', c2Code)
 
-    c3Code = getc3Code(c2Code, realEstate_code['APT'])
-    IO.writeJSON('c3Code.json', c3Code)
+    #c3Code = getc3Code(c2Code, realEstate_code['APT'], driver)
+    #IO.writeJSON('c3Code.json', c3Code)
 
-    # c4Code = getc4Code(c3Code, realEstate_code['APT'])
-    # IO.writeJSON('c4Code.json', c4Code)
+    c1Code = IO.staticLoadJSON('2016-02-01-c1Code.json')
+    c2Code = IO.staticLoadJSON('2016-02-01-c2Code.json')
+    c3Code = IO.staticLoadJSON('2016-02-01-c3Code.json')
+
+    c4Code = getc4Code(c3Code, realEstate_code['APT'], driver)
+    IO.writeJSON('c4Code.json', c4Code)
+
+    c4List = getc4List(c4Code, realEstate_code['APT'], driver)
+    IO.writeJSON('c4List.json', c4List)
+
+    for ii in c4List:
+        print ii['c1NameKR'], ii['c2NameKR'], ii['c3NameKR'], ii['c4NameKR'], ii['c4MaemulType'], ii['c4SellingDate'], ii['c4SellingType'], ii['c4SellingPrice']
 
 else:
     c1Code = IO.staticLoadJSON('2016-01-25-c1Code.json')
@@ -619,10 +669,12 @@ else:
     c3Code = IO.staticLoadJSON('2016-01-25-c3Code.json')
     c4Code = IO.staticLoadJSON('2016-01-28-c4Code.json')
 
-driver = webdriver.PhantomJS(executable_path='C:\\Users\\User\\Downloads\\phantomjs-2.0.0-windows\\phantomjs-2.0.0-windows\\bin\\phantomjs.exe')
+#driver = webdriver.PhantomJS(executable_path='C:\\Users\\User\\Downloads\\phantomjs-2.0.0-windows\\phantomjs-2.0.0-windows\\bin\\phantomjs.exe')
 #c4Code = getc4Code(c3Code[0:1], realEstate_code['APT'], driver)
 #IO.writeJSON('c4Code.json', c4Code)
-c4List = getc4List(c4Code, realEstate_code['APT'], driver)
+#c4List = getc4List(c4Code, realEstate_code['APT'], driver)
+
+
 
 #driver = webdriver.PhantomJS(executable_path='C:\\Users\\User\\Downloads\\phantomjs-2.0.0-windows\\phantomjs-2.0.0-windows\\bin\\phantomjs.exe')
 #url = 'http://realestate.daum.net/iframe/maemul/DanjiMaemulList.daum?mcateCode=A1A3A4&saleTypeCode=*&tabName=maemullist&fullload=Y&isSection=Y&danjiId=4753'
