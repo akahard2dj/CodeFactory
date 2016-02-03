@@ -10,6 +10,7 @@ class EstateList:
         self.c2Code = []
         self.c3Code = []
         self.c4Code = []
+        self.c4List = []
         self.estateCode = 'A01'
         self.RETRIES = 5
         self.TIMEOUT = 5.0
@@ -57,6 +58,12 @@ class EstateList:
             self.c3Code = IO.loadJSON(fname)
         else:
             self.c3Code = IO.staticLoadJSON(fname)
+
+    def set_c4code(self, fname, flag):
+        if flag:
+            self.c4Code = IO.loadJSON(fname)
+        else:
+            self.c4Code = IO.staticLoadJSON(fname)
 
     def get_c1parsing(self, text):
         soup = bs4.BeautifulSoup(text, "html.parser")
@@ -292,6 +299,7 @@ class EstateList:
             item['c4TradeCounts'] = count[0]
             item['c4LeaseCounts'] = count[1]
             item['c4RentCounts'] = count[2][:-1]
+            item['c4TotalSalesCounts'] = int(count[0]) + int(count[1]) + int(count[2][:-1])
 
             code_list.append(item)
 
@@ -303,19 +311,26 @@ class EstateList:
             return None
 
         url_list = []
-        for code in self.c4Code[9:10]:
+        index_list = []
+        specificIdx = 8
+        for idx, code in enumerate(self.c4Code[specificIdx:(specificIdx+1)]):
+        #for idx, code in enumerate(self.c4Code[0:1]):
             #http://land.naver.com/article/articleList.nhn?rletTypeCd=A01&tradeTypeCd=&rletNo=103385&hscpTypeCd=&page=1
-            url1 = 'http://land.naver.com/article/articleList.nhn?rletTypeCd='
-            url2 = '&tradeTypeCd=&hscpTypeCd=&rletNo='
+            nTotalSales = int(code['c4TradeCounts']) + int(code['c4LeaseCounts']) + int(code['c4RentCounts'])
+            if nTotalSales:
+                index_list.append(idx + specificIdx)
+                url1 = 'http://land.naver.com/article/articleList.nhn?rletTypeCd='
+                url2 = '&tradeTypeCd=&hscpTypeCd=&rletNo='
 
-            url = url1 + self.estateCode + url2 + code['c4Code']
-            url_list.append(url)
+                url = url1 + self.estateCode + url2 + code['c4Code']
+                url_list.append(url)
 
         for idx, url in enumerate(url_list):
             nAttempts = 1
+            index = index_list[idx]
             while (nAttempts < self.RETRIES):
                 if self.DEBUG:
-                    print 'DEBUG: get_c4code: %s requesting...' % (url),
+                    print 'DEBUG: get_c4list: %s requesting...' % (url),
 
                 try:
                     r = requests.get(url, timeout=self.TIMEOUT)
@@ -326,8 +341,8 @@ class EstateList:
                 else:
                     if self.DEBUG:
                         print 'Done'
-                        print 'DEBUB: getc3code: %s/%s (%d/%d) ...' % (self.c3Code[idx]['c3NameKR'], self.c3Code[idx]['c3Code'], (idx+1), len(self.c3Code)),
-                        subc4code = self.get_c4parsing(r.text, idx)
+                        print 'DEBUB: getc4list: %s/%s (%d/%d) ...' % (self.c4Code[index]['c3NameKR'], self.c4Code[index]['c3Code'], (idx+1), len(self.c4Code))
+                        subc4code = self.get_c4listparsing(r.text, index, url)
 
                         if self.DEBUG:
                             print 'Done'
@@ -335,38 +350,113 @@ class EstateList:
 
             for sub in subc4code:
                 item = {}
-                item['c1Code'] = self.c3Code[idx]['c1Code']
-                item['c1CoordX'] = self.c3Code[idx]['c1CoordX']
-                item['c1CoordY'] = self.c3Code[idx]['c1CoordY']
-                item['c1NameKR'] = self.c3Code[idx]['c1NameKR']
-                item['c2Code'] = self.c3Code[idx]['c2Code']
-                item['c2NameKR'] = self.c3Code[idx]['c2NameKR']
-                item['c3Code'] = self.c3Code[idx]['c3Code']
-                item['c3NameKR'] = self.c3Code[idx]['c3NameKR']
-                item['c3TotalCounts'] = self.c3Code[idx]['c3TotalCounts']
-                item['c4Code'] = sub['c4Code']
-                item['c4NameKR'] = sub['c4NameKR']
-                item['c4CoordMapX'] = sub['c4CoordMapX']
-                item['c4CoordMapY'] = sub['c4CoordMapY']
-                item['c4TradeCounts'] = sub['c4TradeCounts']
-                item['c4LeaseCounts'] = sub['c4LeaseCounts']
-                item['c4RentCounts'] = sub['c4RentCounts']
+                item['c1Code'] = self.c4Code[idx]['c1Code']
+                item['c1CoordX'] = self.c4Code[idx]['c1CoordX']
+                item['c1CoordY'] = self.c4Code[idx]['c1CoordY']
+                item['c1NameKR'] = self.c4Code[idx]['c1NameKR']
+                item['c2Code'] = self.c4Code[idx]['c2Code']
+                item['c2NameKR'] = self.c4Code[idx]['c2NameKR']
+                item['c3Code'] = self.c4Code[idx]['c3Code']
+                item['c3NameKR'] = self.c4Code[idx]['c3NameKR']
+                item['c3TotalCounts'] = self.c4Code[idx]['c3TotalCounts']
+                item['c4Code'] = self.c4Code[idx]['c4Code']
+                item['c4NameKR'] = self.c4Code[idx]['c4NameKR']
+                item['c4CoordMapX'] = self.c4Code[idx]['c4CoordMapX']
+                item['c4CoordMapY'] = self.c4Code[idx]['c4CoordMapY']
+                item['c4TradeCounts'] = self.c4Code[idx]['c4TradeCounts']
+                item['c4LeaseCounts'] = self.c4Code[idx]['c4LeaseCounts']
+                item['c4RentCounts'] = self.c4Code[idx]['c4RentCounts']
+
+                print sub['c4MaemulType'], sub['c4SellingType'], item['c4NameKR'], sub['c4SellingPrice']
 
                 self.c4Code.append(item)
 
-        IO.writeJSON('c4Code.json', self.c4Code)
+        IO.writeJSON('c4List.json', self.c4Code)
+
+    def get_c4listparsing(self, text, index, url):
+        soup = bs4.BeautifulSoup(text, "html.parser")
+        maemulName = soup.findAll('caption', {'class': 'blind_caption'})
+
+        checkMaemul = soup.find('table', {'class': 'sale_list _tb_site_img NE=a:cpm'})
+        agentMaemul = soup.find('table', {'class': 'sale_list NE=a:prm'})
+
+        nTotalSales = int(self.c4Code[index]['c4TradeCounts']) + int(self.c4Code[index]['c4LeaseCounts']) + int(self.c4Code[index]['c4RentCounts'])
+        nPage = nTotalSales / 30 + 1
+
+        subList = []
+        self.get_c4listparsing_core(checkMaemul, subList, '확인 매물'.decode('utf-8'))
+        self.get_c4listparsing_core(agentMaemul, subList, '공인중개사협회매물'.decode('utf-8'))
+
+        for i in xrange(2, nPage+1):
+            nAttempts = 1
+            pageUrl = url + '&page=' + str(i)
+            while (nAttempts < self.RETRIES):
+                if self.DEBUG:
+                    print 'DEBUG: get_c4list: %s requesting...' % (pageUrl),
+
+                try:
+                    r_sub = requests.get(pageUrl, timeout=self.TIMEOUT)
+                except requests.exceptions.RequestException as e:
+                    print e
+                    print 'Retry to connect ... %d/%d' % (nAttempts, self.RETRIES)
+                    nAttempts += 1
+                else:
+                    if self.DEBUG:
+                        print 'Done'
+                        print 'DEBUB: getc3code: %s (%d/%d) ...' % (self.c4Code[index]['c4NameKR'], i, nPage),
+                        soup_sub = bs4.BeautifulSoup(r_sub.text, "html.parser")
+
+                        checkMaemul_sub = soup_sub.find('table', {'class': 'sale_list _tb_site_img NE=a:cpm'})
+                        agentMaemul_sub = soup_sub.find('table', {'class': 'sale_list NE=a:prm'})
+                        self.get_c4listparsing_core(checkMaemul_sub, subList, '확인 매물'.decode('utf-8'))
+                        self.get_c4listparsing_core(agentMaemul_sub, subList, '공인중개사협회매물'.decode('utf-8'))
+
+                        if self.DEBUG:
+                            print 'Done'
+                        break
+
+
+        return subList
+
+    def get_c4listparsing_core(self, text, list, maemulName):
+        try:
+            item_list = text.find('tbody').findAll('tr')
+        except AttributeError:
+            return None
+        else:
+            nSubItems = len(item_list) / 2
+            for i in xrange(nSubItems):
+                item = {}
+
+                item['c4MaemulType'] = maemulName
+                subItems = item_list[i*2 + 0].findAll('td')
+                #td 1
+                sellingType = subItems[0].find('div', {'class': 'inner'}).text
+
+                #td 7
+                try:
+                    sellingPrice = subItems[6].find('strong')['title']
+                except KeyError:
+                    sellingPrice = subItems[6].find('strong').text.strip()
+                item['c4SellingType'] = sellingType
+                item['c4SellingPrice'] = sellingPrice
+
+                list.append(item)
 
 
 aptList = EstateList()
 aptList.set_debug(True)
-#aptList.set_c1code('c1Code.json', True)
-#aptList.set_c2code('c2Code.json', True)
-#aptList.set_c3code('c3Code.json', True)
-aptList.get_c1code()
-aptList.get_c2code()
-aptList.get_c3code()
+aptList.set_c1code('c1Code.json', True)
+aptList.set_c2code('c2Code.json', True)
+aptList.set_c3code('c3Code.json', True)
+aptList.set_c4code('c4Code.json', True)
+aptList.get_c4List()
+#aptList.get_c1code()
+#aptList.get_c2code()
+#aptList.get_c3code()
 #aptList.get_c4code()
 #c4code = IO.loadJSON('c4Code.json')
+#print len(c4code)
 
 #for ii in c4code:
 #    print ii['c1NameKR'], ii['c2NameKR'], ii['c3NameKR'], ii['c4NameKR'], ii['c1Code'], ii['c2Code'], ii['c3Code'], ii['c4Code'], ii['c4TradeCounts'], ii['c4LeaseCounts'], ii['c4RentCounts']
