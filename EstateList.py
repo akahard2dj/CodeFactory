@@ -367,16 +367,16 @@ class EstateList:
         url_list = list()
         index_list = list()
         specific_idx = 0
-        for idx, code in enumerate(self.__c4Code[specific_idx:(specific_idx+100)]):
+        for idx, code in enumerate(self.__c4Code[specific_idx:(specific_idx+10)]):
         #for idx, code in enumerate(self.__c4Code):
             num_totalsales = int(code['c4TradeCounts']) + int(code['c4LeaseCounts']) + int(code['c4RentCounts'])
-            if num_totalsales:
-                index_list.append(idx + specific_idx)
-                url1 = 'http://land.naver.com/article/articleList.nhn?rletTypeCd='
-                url2 = '&tradeTypeCd=&hscpTypeCd=&rletNo='
+            #if num_totalsales:
+            index_list.append(idx + specific_idx)
+            url1 = 'http://land.naver.com/article/articleList.nhn?rletTypeCd='
+            url2 = '&tradeTypeCd=&hscpTypeCd=&rletNo='
 
-                url = url1 + self.__estateCode + url2 + code['c4Code']
-                url_list.append(url)
+            url = url1 + self.__estateCode + url2 + code['c4Code']
+            url_list.append(url)
 
         for idx, url in enumerate(url_list):
             num_attempts = 1
@@ -400,6 +400,8 @@ class EstateList:
                         print("Done")
 
                     subc4list = self.__get_c4listparsing(r.text, index, url)
+                    print(self.__c4Code[index]['c4NameKR'])
+                    c4code_list = list()
                     for sub in subc4list:
                         #index = index_list[idx]
                         item = dict()
@@ -440,9 +442,10 @@ class EstateList:
                         item['c4SellingSourceLink'] = sub['c4SellingSourceLink']
                         item['c4SellingClass'] = sub['c4SellingClass']
 
-                        self.__c4List.append(item)
-
+                        c4code_list.append(item)
+                        #self.__c4List.append(item)
                         #print(sub['c4MaemulType'], sub['c4SellingType'], item['c4NameKR'], sub['c4SellingPrice'])
+                    IO.write_c4list_json(self.__c4Code[index]['c4Code'], c4code_list)
 
                     break
 
@@ -450,7 +453,7 @@ class EstateList:
         self.__elapsedtime_c4 = end_time - start_time
         if self.__DEBUG:
             print("DEBUG: Elapsed time for c4 parsing : %f sec." % self.__elapsedtime_c4)
-        IO.writeJSON('c4List.json', self.__c4List)
+        #IO.writeJSON('c4List.json', self.__c4List)
 
     def __get_c4listparsing(self, text, index, url):
         soup = bs4.BeautifulSoup(text, "html.parser")
