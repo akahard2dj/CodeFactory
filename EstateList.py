@@ -122,8 +122,10 @@ class EstateList:
                 try:
                     r = requests.get(url, timeout=self.__TIMEOUT)
                 except requests.exceptions.RequestException as e:
-                    print("Requests Error Msg: %s" % e)
-                    print("Retrying to connect ... %d/%d" % (num_attempts+1, self.__RETRIES))
+                    if self.__DEBUG:
+                        print("Failed")
+                        print("Requests Error Msg: %s" % e)
+                        print("Retrying to connect ... %d/%d" % (num_attempts+1, self.__RETRIES))
                     num_attempts += 1
                 else:
                     subc2code = self.__get_c2parsing(r.text, idx)
@@ -365,8 +367,8 @@ class EstateList:
         url_list = list()
         index_list = list()
         specific_idx = 0
-        #for idx, code in enumerate(self.__c4Code[specific_idx:(specific_idx+1)]):
-        for idx, code in enumerate(self.__c4Code):
+        for idx, code in enumerate(self.__c4Code[specific_idx:(specific_idx+100)]):
+        #for idx, code in enumerate(self.__c4Code):
             num_totalsales = int(code['c4TradeCounts']) + int(code['c4LeaseCounts']) + int(code['c4RentCounts'])
             if num_totalsales:
                 index_list.append(idx + specific_idx)
@@ -418,6 +420,26 @@ class EstateList:
                         item['c4LeaseCounts'] = self.__c4Code[index]['c4LeaseCounts']
                         item['c4RentCounts'] = self.__c4Code[index]['c4RentCounts']
 
+                        item['c4SellingType'] = sub['c4SellingType']
+                        item['c4SellingDate'] = sub['c4SellingDate']
+                        item['c4SellingStatus'] = sub['c4SellingStatus']
+                        item['c4SellingStatusCaption'] = sub['c4SellingStatusCaption']
+                        item['c4SellingDetailLink'] = sub['c4SellingDetailLink']
+                        item['c4SellingAreaType'] = sub['c4SellingAreaType']
+                        item['c4SellingSupplyArea'] = sub['c4SellingSupplyArea']
+                        item['c4SellingNetArea'] = sub['c4SellingNetArea']
+                        item['c4SellingComlex'] = sub['c4SellingComlex']
+                        item['c4SellingFloor'] = sub['c4SellingFloor']
+                        item['c4SellingTotalFloor'] = sub['c4SellingTotalFloor']
+                        item['c4SellingPrice'] = sub['c4SellingPrice']
+                        item['c4SellingAgentName'] = sub['c4SellingAgentName']
+                        item['c4SellingAgentTel'] = sub['c4SellingAgentTel']
+                        item['c4SellingAgentCode'] = sub['c4SellingAgentCode']
+                        item['c4SellingAgentComment'] = sub['c4SellingAgentComment']
+                        item['c4SellingSource'] = sub['c4SellingSource']
+                        item['c4SellingSourceLink'] = sub['c4SellingSourceLink']
+                        item['c4SellingClass'] = sub['c4SellingClass']
+
                         self.__c4List.append(item)
 
                         #print(sub['c4MaemulType'], sub['c4SellingType'], item['c4NameKR'], sub['c4SellingPrice'])
@@ -428,7 +450,7 @@ class EstateList:
         self.__elapsedtime_c4 = end_time - start_time
         if self.__DEBUG:
             print("DEBUG: Elapsed time for c4 parsing : %f sec." % self.__elapsedtime_c4)
-        IO.staticWriteJSON('2016-02-15-c4List.json', self.__c4List)
+        IO.writeJSON('c4List.json', self.__c4List)
 
     def __get_c4listparsing(self, text, index, url):
         soup = bs4.BeautifulSoup(text, "html.parser")
@@ -484,19 +506,213 @@ class EstateList:
                 item = dict()
                 # 8td & 9td
                 # check
-                # http://land.naver.com/article/articleList.nhn?rletTypeCd=A01&tradeTypeCd=&hscpTypeCd=&rletNo=104598 
+                # http://land.naver.com/article/articleList.nhn?rletTypeCd=A01&tradeTypeCd=&hscpTypeCd=&rletNo=104598
 
                 item['c4MaemulType'] = maemul_name
                 subitems = item_list[i*2 + 0].findAll('td')
-                #td 1
-                selling_type = subitems[0].find('div', {'class': 'inner'}).text
+                subitems2 = item_list[i*2 + 1].findAll('td')
+                num_tdcounts = len(subitems)
 
-                #td 7
-                try:
-                    selling_price = subitems[6].find('strong')['title']
-                except KeyError:
-                    selling_price = subitems[6].find('strong').text.strip()
-                item['c4SellingType'] = selling_type
-                item['c4SellingPrice'] = selling_price
+                if maemul_name == u'공인중개사협회매물':
+                    # td 1 - selling type
+                    selling_type = subitems[0].find('div', {'class': 'inner'}).text
+
+                    # td 2 - selling date
+                    selling_date = subitems[1].text
+
+                    #td 4 - area
+                    arealist = subitems[3].find('div', {'class': 'inner'}).text.strip().split()
+                    selling_areatype = arealist[0]
+                    selling_supplyarea = arealist[2]
+                    selling_netarea = arealist[4]
+
+                    #td 5 - complex
+                    selling_complex = subitems[4].find('div').text
+
+                    #td 6 - floor
+                    floorlist = subitems[5].find('div').text.split('/')
+                    selling_floor = floorlist[0]
+                    selling_totalfloor = floorlist[1]
+
+                    # td 7 - price
+
+                    selling_price = subitems[6].find('strong').text
+
+                    # td 8 - contact
+                    agent_name = subitems[7].findAll('span')[0]['title']
+                    agent_tel = subitems[7].findAll('span')[1].text
+                    try:
+                        tmp = subitems[7].find('a')['href']
+                        agent_code = tmp.split('(', 1)[1].split(')')[0].split("'", 1)[1].split("'")[0]
+                    except TypeError:
+                        agent_code = 'NoCode'
+
+
+                    # td 1 - comment & agent
+                    agent_comment = subitems2[0].findAll('span')[0]['title'].strip()
+
+                    selling_source = subitems2[0].findAll('span')[1].text.strip()
+
+                    item['c4SellingType'] = selling_type
+                    item['c4SellingDate'] = selling_date
+                    item['c4SellingStatus'] = ""
+                    item['c4SellingStatusCaption'] = ""
+                    item['c4SellingDetailLink'] = ""
+                    item['c4SellingAreaType'] = selling_areatype
+                    item['c4SellingSupplyArea'] = selling_supplyarea
+                    item['c4SellingNetArea'] = selling_netarea
+                    item['c4SellingComlex'] = selling_complex
+                    item['c4SellingFloor'] = selling_floor
+                    item['c4SellingTotalFloor'] = selling_totalfloor
+                    item['c4SellingPrice'] = selling_price
+                    item['c4SellingAgentName'] = agent_name
+                    item['c4SellingAgentTel'] = agent_tel
+                    item['c4SellingAgentCode'] = agent_code
+                    item['c4SellingAgentComment'] = agent_comment
+                    item['c4SellingSource'] = selling_source
+                    item['c4SellingSourceLink'] = ""
+                    item['c4SellingClass'] = maemul_name
+
+                if maemul_name == u'확인 매물' and num_tdcounts == 8:
+                    #td 1 - selling type
+                    selling_type = subitems[0].find('div', {'class': 'inner'}).text
+
+                    #td 2 - selling price
+                    selling_date = subitems[1].find('span').text
+                    selling_check = subitems[1].find('span')['class'][0]
+                    try:
+                        selling_checkcaption = subitems[1].find('span')['title']
+                    except KeyError:
+                        selling_checkcaption = subitems[1].find('img')['alt']
+
+                    #td 3 - detail link
+                    selling_detail_link = subitems[2].findAll('a')[1]['href']
+
+                    #td 4 - area
+                    arealist = subitems[3].find('div', {'class': 'inner'}).text.strip().split()
+                    selling_areatype = arealist[0]
+                    selling_supplyarea = arealist[2]
+                    selling_netarea= arealist[4]
+
+                    #td 5 - complex
+                    selling_complex = subitems[4].find('div').text
+
+                    #td 6 - floor
+                    floorlist = subitems[5].find('div').text.split('/')
+                    selling_floor = floorlist[0]
+                    selling_totalfloor = floorlist[1]
+
+                    # td 7 - price
+                    try:
+                        selling_price = subitems[6].find('strong')['title']
+                    except KeyError:
+                        selling_price = subitems[6].find('strong').text.strip()
+
+                    # td 8 - contact
+                    agent_name = subitems[7].findAll('span')[0]['title']
+                    agent_tel = subitems[7].findAll('span')[1].text
+                    try:
+                        tmp = subitems[7].find('a')['href']
+                        agent_code = tmp.split('(', 1)[1].split(')')[0].split("'", 1)[1].split("'")[0]
+                    except TypeError:
+                        agent_code = 'NoCode'
+                    # td 1 - comment & agent
+                    agent_comment = subitems2[0].find('span')['title'].strip()
+
+                    selling_source = subitems2[0].find('a').text
+                    selling_sourcelink = subitems2[0].find('a')['href']
+
+                    item['c4SellingType'] = selling_type
+                    item['c4SellingDate'] = selling_date
+                    item['c4SellingStatus'] = selling_check
+                    item['c4SellingStatusCaption'] = selling_checkcaption
+                    item['c4SellingDetailLink'] = selling_detail_link
+                    item['c4SellingAreaType'] = selling_areatype
+                    item['c4SellingSupplyArea'] = selling_supplyarea
+                    item['c4SellingNetArea'] = selling_netarea
+                    item['c4SellingComlex'] = selling_complex
+                    item['c4SellingFloor'] = selling_floor
+                    item['c4SellingTotalFloor'] = selling_totalfloor
+                    item['c4SellingPrice'] = selling_price
+                    item['c4SellingAgentName'] = agent_name
+                    item['c4SellingAgentTel'] = agent_tel
+                    item['c4SellingAgentCode'] = agent_code
+                    item['c4SellingAgentComment'] = agent_comment
+                    item['c4SellingSource'] = selling_source
+                    item['c4SellingSourceLink'] = selling_sourcelink
+                    item['c4SellingClass'] = maemul_name
+
+                    #print(selling_date,selling_check,selling_caption,selling_areatype,selling_supplyarea,selling_netarea,selling_complex,selling_floor,selling_totalfloor,agent_name,agent_tel,selling_source,agent_code,agent_comment)
+
+
+                if maemul_name == u'확인 매물' and num_tdcounts == 9:
+                    #td 1
+                    selling_type = subitems[0].find('div', {'class': 'inner'}).text
+
+                    #td 2 - selling price
+                    selling_date = subitems[1].find('span').text
+                    selling_check = subitems[1].find('span')['class'][0]
+                    try:
+                        selling_checkcaption = subitems[1].find('span')['title']
+                    except KeyError:
+                        selling_checkcaption = ""
+
+                    #td 3 - detail link
+                    selling_detail_link = subitems[3].findAll('a')[1]['href']
+
+                    #td 4 - area
+                    arealist = subitems[4].find('div', {'class': 'inner'}).text.strip().split()
+                    selling_areatype = arealist[0]
+                    selling_supplyarea = arealist[2]
+                    selling_netarea= arealist[4]
+
+                    #td 5 - complex
+                    selling_complex = subitems[5].find('div').text
+
+                    #td 6 - floor
+                    floorlist = subitems[6].find('div').text.split('/')
+                    selling_floor = floorlist[0]
+                    selling_totalfloor = floorlist[1]
+
+                    #td 7 - price
+                    try:
+                        selling_price = subitems[7].find('strong')['title']
+                    except KeyError:
+                        selling_price = subitems[7].find('strong').text.strip()
+
+                    #td 8 - contact
+                    agent_name = subitems[8].findAll('span')[0]['title']
+                    agent_tel = subitems[8].findAll('span')[1].text
+                    try:
+                        tmp = subitems[8].find('a')['href']
+                        agent_code = tmp.split('(',1)[1].split(')')[0].split("'",1)[1].split("'")[0]
+                    except TypeError:
+                        agent_code = 'NoCode'
+                    #td 1 - comment & agent
+                    agent_comment = subitems2[0].find('span')['title'].strip()
+
+                    selling_source = subitems2[0].find('a').text
+                    selling_sourcelink = subitems2[0].find('a')['href']
+
+                    # print(selling_date,selling_check,selling_caption,selling_areatype,selling_supplyarea,selling_netarea,selling_complex,selling_floor,selling_totalfloor,agent_name,agent_tel,selling_source,agent_code,agent_comment)
+                    item['c4SellingType'] = selling_type
+                    item['c4SellingDate'] = selling_date
+                    item['c4SellingStatus'] = selling_check
+                    item['c4SellingStatusCaption'] = selling_checkcaption
+                    item['c4SellingDetailLink'] = selling_detail_link
+                    item['c4SellingAreaType'] = selling_areatype
+                    item['c4SellingSupplyArea'] = selling_supplyarea
+                    item['c4SellingNetArea'] = selling_netarea
+                    item['c4SellingComlex'] = selling_complex
+                    item['c4SellingFloor'] = selling_floor
+                    item['c4SellingTotalFloor'] = selling_totalfloor
+                    item['c4SellingPrice'] = selling_price
+                    item['c4SellingAgentName'] = agent_name
+                    item['c4SellingAgentTel'] = agent_tel
+                    item['c4SellingAgentCode'] = agent_code
+                    item['c4SellingAgentComment'] = agent_comment
+                    item['c4SellingSource'] = selling_source
+                    item['c4SellingSourceLink'] = selling_sourcelink
+                    item['c4SellingClass'] = maemul_name
 
                 sublist.append(item)
