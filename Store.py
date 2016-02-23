@@ -150,8 +150,10 @@ class Store:
             url_request = 'http://www.ediya.com/board/listing/brd/store/page/' + str(i+1)
             req = requests.get(url_request)
             #print(req.headers['Content-type'])
-            print(req.text.encode('utf-8'))
-            self.__get_parsing_ediya(req.text)
+            print(req.content)
+            self.__get_parsing_ediya(req.content)
+
+        IO.writeJSON('cafe_ediya.json', self.__cafe_ediya)
 
     @staticmethod
     def __get_parsing_edity_lasgpage(text):
