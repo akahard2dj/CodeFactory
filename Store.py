@@ -8,16 +8,23 @@ from selenium import webdriver
 
 class Store:
     def __init__(self):
-        self.__store_oliveyoung = list()
+        self.__drug_gswatsons = list()
+        self.__drug_oliveyoung = list()
+
         self.__store_emart = list()
         self.__store_homeplus = list()
+        
+        self.__cvs_gs25 = list()
 
         self.__cafe_ediya = list()
+
+        self.__fastfood_mac = list()
 
         self.__DEBUG = True
         self.__RETRIES = 10
         self.__TIMEOUT = 1.0
         self.__webdriver = None
+        self.__SLEEPTIME = 2.0
 
     def get_oliveyoung(self):
         start_time = time.clock()
@@ -34,7 +41,7 @@ class Store:
 
         end_time = time.clock()
 
-        IO.writeJSON('store_oliveyoung.json', self.__store_oliveyoung)
+        IO.writeJSON('drug_oliveyoung.json', self.__drug_oliveyoung)
 
     @staticmethod
     def __is_empty_oliveyoung(text):
@@ -64,7 +71,7 @@ class Store:
             item['storeTel'] = items[4].text
             print(item['StoreName'], item['StoreRegion'])
 
-            self.__store_oliveyoung.append(item)
+            self.__drug_oliveyoung.append(item)
 
     def get_emart(self):
         self.__webdriver = webdriver.PhantomJS(executable_path='C:\\Users\\User\\Downloads\\phantomjs-2.0.0-windows\\phantomjs-2.0.0-windows\\bin\\phantomjs.exe')
@@ -117,7 +124,7 @@ class Store:
                 break
             else:
                 self.__get_parsing_homeplus(r.text)
-        IO.writeJSON('store_homeplus.json', self.__store_oliveyoung)
+        IO.writeJSON('store_homeplus.json', self.__store_homeplus)
 
     @staticmethod
     def __is_empty_homeplus(text):
@@ -175,5 +182,97 @@ class Store:
             item['StoreName'] = sub[1].text
             item['StoreRegion'] = sub[0].text
             item['StoreAddress'] = sub[2].text
+            self.__cafe_ediya.append(item)
             print(item['StoreName'],item['StoreAddress'])
 
+    def get_cvs_gs25(self):
+        #driver = webdriver.Firefox()
+        if self.__webdriver is None:
+            self.__webdriver = webdriver.PhantomJS(executable_path='C:\\Users\\User\\Downloads\\phantomjs-2.0.0-windows\\phantomjs-2.0.0-windows\\bin\\phantomjs.exe')
+
+        self.__get_gs25()
+        self.__webdriver.close()
+        IO.writeJSON('cvs_gs25.json', self.__cvs_gs25)
+
+    def __get_gs25(self):
+        url = 'http://gs25.gsretail.com/gscvs/ko/store-services/locations'
+        self.__webdriver.get(url)
+        self.__webdriver.find_element_by_link_text('마지막 페이지로 이동').click()
+        time.sleep(self.__SLEEPTIME)
+        lastpage = self.__get_cvs_gs25_lastpage(self.__webdriver.page_source)
+        self.__webdriver.find_element_by_link_text('처음 페이지로 이동').click()
+        time.sleep(self.__SLEEPTIME)
+
+        for idx in range(int(lastpage)):
+            print(idx+1,'page / ',lastpage)
+            self.__get_parsing_gs25(self.__webdriver.page_source)
+            self.__webdriver.find_element_by_link_text('다음 페이지로 이동').click()
+            time.sleep(self.__SLEEPTIME)
+
+    def __get_parsing_gs25(self, text):
+        soup = bs4.BeautifulSoup(text, 'html.parser')
+        table_border = soup.find('tbody', {'id': 'storeInfoList'})
+        table_lists = table_border.findAll('tr')
+        for store_list in table_lists:
+            item = dict()
+            item['StoreName'] = store_list.findAll('td')[0].find('a').text
+            item['StoreAddress'] = store_list.findAll('td')[1].find('a').text
+            self.__cvs_gs25.append(item)
+            print(item['StoreName'],item['StoreAddress'])
+
+    @staticmethod
+    def __get_cvs_gs25_lastpage(text):
+        soup = bs4.BeautifulSoup(text, 'html.parser')
+        pagelist = soup.find('span', {'id': 'pagingTag'})
+
+        return pagelist.findAll('a')[-1].text
+
+    def get_drug_gswatsons(self):
+        #driver = webdriver.Firefox()
+        if self.__webdriver is None:
+            self.__webdriver = webdriver.PhantomJS(executable_path='C:\\Users\\User\\Downloads\\phantomjs-2.0.0-windows\\phantomjs-2.0.0-windows\\bin\\phantomjs.exe')
+
+        self.__get_gswatsons()
+        self.__webdriver.close()
+        IO.writeJSON('drug_gswatsons.json', self.__drug_gswatsons)
+
+    def __get_gswatsons(self):
+        url = 'http://watsons.gsretail.com/watsons/ko/market-info'
+        self.__webdriver.get(url)
+        self.__webdriver.find_element_by_link_text('마지막 페이지로 이동').click()
+        time.sleep(self.__SLEEPTIME)
+        lastpage = self.__get_drug_gswatsons_lastpage(self.__webdriver.page_source)
+        self.__webdriver.find_element_by_link_text('처음 페이지로 이동').click()
+        time.sleep(self.__SLEEPTIME)
+
+        for idx in range(int(lastpage)):
+            print(idx+1,'page / ',lastpage)
+            self.__get_parsing_gswatsons(self.__webdriver.page_source)
+            self.__webdriver.find_element_by_link_text('다음 페이지로 이동').click()
+            time.sleep(self.__SLEEPTIME)
+
+    def __get_parsing_gswatsons(self, text):
+        soup = bs4.BeautifulSoup(text, 'html.parser')
+        table_border = soup.find('div', {'id': 'searchList'})
+        table_lists = table_border.findAll('li')
+        for store_list in table_lists:
+            item = dict()
+            item['StoreName'] = store_list.find('p').text
+            item['StoreAddress'] = store_list.findAll('strong')[1].nextSibling.replace(':','').strip()
+            self.__drug_gswatsons.append(item)
+            print(item['StoreName'],item['StoreAddress'])
+
+    @staticmethod
+    def __get_drug_gswatsons_lastpage(text):
+        soup = bs4.BeautifulSoup(text, 'html.parser')
+        pagelist = soup.find('span', {'class': 'num'})
+
+        return pagelist.findAll('a')[-1].text
+
+    def get_fastfood_mac(self, c1code):
+        url = 'http://www.mcdonalds.co.kr/www/kor/findus/district.do?sSearch_yn=Y&skey=2&skeyword='
+        url_list = list()
+        for code in c1code:
+            query = url + code['c1NameKR'].replace('시', '').replace('도', '')
+
+            print(query)
