@@ -6,6 +6,8 @@ import time
 import IO
 import re
 from selenium import webdriver
+import selenium.common.exceptions
+
 
 class Store:
     def __init__(self):
@@ -17,6 +19,7 @@ class Store:
         
         self.__cvs_gs25 = list()
 
+        self.__cafe_starbucks = list()
         self.__cafe_ediya = list()
 
         self.__fastfood_mac = list()
@@ -270,7 +273,7 @@ class Store:
 
         return pagelist.findAll('a')[-1].text
 
-    def get_fastfood_mac(self, c1code):
+    def get_fastfood_mac(self):
         url = 'http://www.mcdonalds.co.kr/www/kor/findus/district.do?&sSearch_yn=Y&skey=2&skey1=&skey2=&skey4=&skey5=&skeyword2=&sflag1=&sflag2=&sflag3=&sflag4=&sflag5=&sflag6=&sflag=N&skeyword=&sSearch_yn=Y&skey=2&skey1=&skey2=&skeyword=&skey4=&skey5=&skeyword2=&sflag1=&sflag2=&sflag3=&sflag4=&sflag5=&sflag6=&sflag=N'
         r = requests.get(url)
         self.__get_parsing_mac(r.text, url)
@@ -307,4 +310,63 @@ class Store:
                     else:
                         print('no')
                 '''
+
+    def get_cafe_starbucks(self, c1code):
+        if self.__webdriver is None:
+            self.__webdriver = webdriver.PhantomJS(executable_path='C:\\Users\\User\\Downloads\\phantomjs-2.1.1-windows\\phantomjs-2.1.1-windows\\bin\\phantomjs.exe')
+            #self.__webdriver = webdriver.Firefox()
+
+        url_list = list()
+        url1 = 'http://map.naver.com/?query=스타벅스+'
+        url2 = '+매장&type=SITE_1'
+        for code in c1code:
+            url = url1 + code['c1NameKR'] + url2
+            url_list.append(url)
+
+        for url in url_list:
+            print(url)
+            self.__webdriver.get(url)
+            self.__get_parsing_starbucks()
+
+        self.__webdriver.close()
+        IO.writeJSON('cafe_starbucks.json', self.__cafe_starbucks)
+
+    def __get_parsing_starbucks(self):
+
+        for idx in range(1000):
+            print(self.__webdriver.page_source)
+            self.__get_core_parsing_starbucks(self.__webdriver.page_source)
+            num_page = idx + 2
+            remainder = num_page % 5
+            if remainder != 1:
+                try:
+                    self.__webdriver.find_element_by_link_text(str(num_page)).click()
+                    time.sleep(2)
+                except selenium.common.exceptions.NoSuchElementException:
+                    break
+            else:
+                try:
+                    self.__webdriver.find_element_by_link_text('다음').click()
+                    time.sleep(2)
+                except selenium.common.exceptions.NoSuchElementException:
+                    break
+
+    def __get_core_parsing_starbucks(self, text):
+        soup = bs4.BeautifulSoup(text, "html.parser")
+        site_border = soup.find('ul', {'class': 'lst_site'})
+        table_lists = site_border.findAll('li')
+
+        for idx in range(len(table_lists)):
+            if (idx % 5) is 0:
+                item = dict()
+                item['StoreName'] = table_lists[idx].find('dl', {'class': 'lsnx_det'}).find('a').text
+                item['StoreAddress'] = table_lists[idx].find('dd', {'class': 'addr'}).text.replace("지번", "").strip()
+
+                try:
+                    tel = table_lists[idx].find('dd', {'class': 'tel'}).text
+                except AttributeError:
+                    tel = 'None'
+                item['StoreTel'] = tel
+
+                self.__cafe_starbucks.append(item)
 
