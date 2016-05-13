@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<body>
+<table style="width:100%">
+    {% for item in parent_dict %}
+    <tr>
+        <td>{{ item['c4SellingDate'] }}</td>
+        <td>{{ item['c4SellingType'] }}</td>
+        <td>{{ item['c4NameKR'] }}</td>
+        <td>{{ item['c4SellingAreaType'] }}</td>
+        <td>{{ item['c4SellingPrice'] }}</td>
+        <td>{{ item['c4SellingAgentName'] }}</td>
+    </tr>
+    {% endfor %}
+</table>
+</body>
+</html>
