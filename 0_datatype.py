@@ -1,10 +1,10 @@
-class c1code:
+class C1Code:
 
     def __init__(self):
-        self.c1Code = 'test'
-        self.c1CoordX = ''
-        self.c1CoordY = ''
-        self.c1NameKR = ''
+        self.c1Code = str()
+        self.c1CoordX = str()
+        self.c1CoordY = str()
+        self.c1NameKR = str()
 
     def set_c1code(self, c1code):
         self.c1Code = c1code['value']
@@ -15,12 +15,32 @@ class c1code:
     def print_c1code(self):
         print(self.c1Code, self.c1NameKR)
 
-class c2code(c1code):
+    class Builder:
+        def __init__(self):
+            self.c1Code = C1Code()
+
+        def set_c1code(self, arg):
+            self.c1Code.c1Code = arg
+            return self
+
+        def set_c1coord(self, arg1, arg2):
+            self.c1Code.c1CoordX = arg1
+            self.c1Code.c1CoordY = arg2
+            return self
+
+        def set_c1namekr(self, arg):
+            self.c1Code.c1NameKR = arg
+            return self
+
+        def build(self):
+            return self.c1Code
+
+class C2Code(C1Code):
     def __init__(self):
 
         self.c2Code = 'test'
         self.c2NameKR = 'test'
-        super(c2code, self).__init__()
+        super(C2Code, self).__init__()
 
     def set_c2code(self, c2code):
         self.c2Code = 'test'
