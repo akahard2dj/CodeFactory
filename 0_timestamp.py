@@ -1,6 +1,7 @@
 import time
 
-class timestamp:
+
+class Timestamp:
     def __init__(self, tag):
         self.__isUse = False
         self.__tag = tag
@@ -22,6 +23,6 @@ class timestamp:
         self.__isUse = False
         self.__end_time = time.clock()
 
-    def showLog(self):
+    def show_log(self):
         self.__elapsed_time = self.__end_time - self.__start_time
         print("%s: Elapsed time = %f sec." % (self.__tag,  self.__elapsed_time))
