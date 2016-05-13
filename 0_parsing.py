@@ -5,14 +5,14 @@ import bs4
 import requests
 import requests.exceptions
 
-class parsing():
+
+class Parsing:
 
     def __init__(self):
         self.__RETRIES = 10
         self.__TIMEOUT = 1.0
         self.__DEBUG = True
         self.__c1Code = list()
-
 
     @property
     def c1code(self):
@@ -23,7 +23,7 @@ class parsing():
         self.__c1Code = IO.c1_load_json(filename)
 
     def parsing_c1code(self):
-        t1 = timestamp.timestamp('c1code')
+        t1 = timestamp.Timestamp('c1code')
         t1.start()
 
         url = 'http://land.naver.com'
@@ -51,7 +51,7 @@ class parsing():
             return 0
 
         if self.__DEBUG:
-            t1.showLog()
+            t1.show_log()
 
     def __get_c1code(self, text):
         soup = bs4.BeautifulSoup(text, "html.parser")
@@ -59,7 +59,12 @@ class parsing():
         option_lists = selectbox.findAll("option")
 
         for option in option_lists:
-            c1 = datatype.c1code()
-            c1.set_c1code(option)
+
+            builder = datatype.C1Code.Builder()
+            builder.set_c1code(option['value'])
+            builder.set_c1coord(option['xcrdn'], option['ycrdn'])
+            builder.set_c1namekr(option.text)
+
+            c1 = builder.build()
             self.__c1Code.append(c1)
 
