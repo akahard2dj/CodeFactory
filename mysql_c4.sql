@@ -33,5 +33,5 @@ c4complexlowestfloor char(5),
 c4complexareatypefloatlist varchar(1024),
 c4complexareatypeintlist varchar(1024),
 c4complexadminlfficetel char(15),
-c4complexaddress1 char(36),
-c4complexaddress2 char(36));
+c4complexaddress1 char(50),
+c4complexaddress2 char(50));
