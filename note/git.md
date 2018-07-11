@@ -18,6 +18,7 @@ $ git remote add upstream https://github.com/project/project.git
 $ git checkout -b my-feature
 ```
 and start making changes. NEVER WORK IN THE MASTER BRANCH.
+
 4. work on my computer, using Git to do the version control:
 ```bash
 $ git add modified_files
