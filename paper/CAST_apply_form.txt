@@ -1,0 +1,51 @@
+- Degree programme
+Master Astronomy plus Physics
+
+- List of attended astronomical lectures
+
+Physcis
+  GENERAL PHYSICS AND LABORATORY
+  MECHANICS
+  MODERN PHYSICS
+  QUANTUM MECHANICS
+  ELECTRICITY & MAGNETISM
+  MATHEMATICAL PHYSICS
+
+Astronomy
+  EXPLORATION OF THE UNIVERSE
+  INTRODUCTION TO ASTROPHYSICS
+  ASTRODYNAMICS
+  ASTROPHYSICS
+  STELLAR EVOLUTION
+  GALAXIES AND THE UNIVERSE
+  SCIENTIFIC IMAGE DATA PROCESSING
+  COSMOLOGY
+  
+  STELLAR EVOLUTION&POPULATIONS	
+  CELESTIAL MECHANICS	
+  GALACTIC STRUCTURE  
+  
+- Programming skills
+Lectures
+  COMPUTATIONAL PHYSICS  
+  NUMERICAL ANALYSIS
+
+Language and Library Fluency
+  Python (top level)
+  Numpy/Scipy (intermediate)
+  C/C++ (intermediate)
+  GSL (intermediate)
+  MPI (intermediate)
+  Matlab (intermediate)
+  Numerical Analysis (top level)
+  
+Experienced OS
+  Linux, Mac, Windows
+  
+- Possible staring date of your thesis
+  2019 march
+  
+- Field of my interest
+  I am interested in the structure, formation and dynamics of dark matter halos. 
+  I have written Master Thesis 'Evolutionary history of the satellite dark halos during a merger' in Yonsei University.
+  
