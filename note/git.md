@@ -5,6 +5,30 @@
 $ git config --global http.sslVerify false
 ```
 
+- Configuring a remote for a fork
+```bash
+$ git remote -v
+origin https://github.com/YOUR_USERNAME/YOUR_FORK.git (fetch)
+origin https://github.com/YOUR_USERNAME/YOUR_FORK.git (push)
+
+$ git remote add upstream hppts://github.com/ORIGINAL_OWNER/ORIGINAL_REPOSITORY.git
+
+$ git remote -v
+origin   https://github.com/YOUR_USERNAME/YOUR_FORK.git (fetch)
+origin   https://github.com/YOUR_USERNAME/YOUR_FORK.git (push)
+upstream https://github.com/ORIGINAL_OWNER/ORIGINAL_REPOSITORY.git (fetch)
+upstream https://github.com/ORIGINAL_OWNER/ORIGINAL_REPOSITORY.git (push)
+
+```
+
+
+- Syncing a fork
+```bash
+$ git fetch upstream
+$ git checkout master
+$ git merge upstream/master
+```
+
 
 - Contributing code
 1. Fork the project repository
