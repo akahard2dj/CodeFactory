@@ -157,3 +157,17 @@ int main() {
         pool.EnqueueJob([i]() { read_work(i); });
     return 0;
 }
+
+/* output 
+./ringbuffer_multiplt_thread
+Host Message   : Hello From Host
+Client Recived : ( Client Recived : ( 0 ) - Hello From Host1 ) - Hello From Host
+Client Recived : ( 3 ) - Hello From Host
+Client Recived : ( 4 ) - Hello From Host
+Client Recived : ( 5 ) - Hello From Host
+Client Recived : ( 6 ) - Hello From Host
+Client Recived : ( 7 ) - Hello From Host
+Client Recived : ( 8Client Recived : (  ) - Hello From Host
+2Client Recived : (  ) - Hello From Host9 ) - Hello From Host
+
+*/
