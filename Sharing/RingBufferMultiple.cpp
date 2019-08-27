@@ -102,8 +102,7 @@ int main() {
 
         rb.read(chRecValue, MAX_BUF);
         if (strlen(chRecValue) != writeBytes) {
-            Consumer lastC = q1.back();
-            Consumer cc = {lastC.id + 1, writeBytes};
+            Consumer cc = {c.id, writeBytes};
             q1.push(cc);
         } else {
             cout << "Client Recived : ( " << c.id << " ) - " << chRecValue << endl;
